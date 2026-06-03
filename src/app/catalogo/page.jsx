@@ -83,15 +83,15 @@ function CatalogoContent() {
                 {cargando ? 'Cargando...' : `${filtrados.length} producto${filtrados.length !== 1 ? 's' : ''}`}
               </p>
             </div>
-            <div className="relative hidden sm:block flex-shrink-0">
+            <div className="relative flex-shrink-0">
               <select value={orden} onChange={e => setOrden(e.target.value)}
-                className="appearance-none border border-gray-200 rounded-xl px-4 py-2 pr-8 text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-brand-purple-400 cursor-pointer">
+                className="appearance-none border border-gray-200 rounded-xl px-3 py-2 pr-7 text-xs sm:text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-brand-purple-400 cursor-pointer">
                 <option value="destacados">Destacados</option>
                 <option value="precio-asc">Precio ↑</option>
                 <option value="precio-desc">Precio ↓</option>
                 <option value="nombre">A–Z</option>
               </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
             </div>
           </div>
 
@@ -108,7 +108,7 @@ function CatalogoContent() {
           </div>
 
           {/* Categorías mobile */}
-          <div className="md:hidden flex gap-2 overflow-x-auto pb-2 mb-4">
+          <div className="md:hidden flex gap-2 overflow-x-auto pb-2 mb-4 scroll-x-hidden -mx-4 px-4">
             <button onClick={() => { setCat(''); setSoloOfertas(false); }}
               className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${!catSeleccionada && !soloOfertas ? 'bg-brand-purple-800 text-brand-yellow-400' : 'bg-gray-100 text-gray-600'}`}>
               Todos

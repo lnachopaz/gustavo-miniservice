@@ -157,11 +157,11 @@ export default function Navbar() {
                 </Link>
               )}
 
-              {/* Carrito */}
+              {/* Carrito — solo en desktop (mobile usa BottomNav) */}
               <button onClick={toggleCart}
-                className="relative flex items-center gap-2 bg-brand-yellow-400 hover:bg-brand-yellow-300 text-brand-purple-900 font-bold px-3 py-2 rounded-xl transition-all duration-200 active:scale-95">
+                className="hidden sm:flex relative items-center gap-2 bg-brand-yellow-400 hover:bg-brand-yellow-300 text-brand-purple-900 font-bold px-3 py-2 rounded-xl transition-all duration-200 active:scale-95">
                 <ShoppingCart className="w-5 h-5" />
-                <span className="hidden sm:inline text-sm">Carrito</span>
+                <span className="text-sm">Carrito</span>
                 {totalItems > 0 && (
                   <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-xs font-bold min-w-[20px] h-5 rounded-full flex items-center justify-center px-1">
                     {totalItems}
@@ -169,8 +169,8 @@ export default function Navbar() {
                 )}
               </button>
 
-              {/* Mobile menu */}
-              <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-brand-yellow-400 p-1">
+              {/* Mobile menu hamburguesa */}
+              <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-brand-yellow-400 p-2 -mr-1">
                 {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
             </div>
@@ -187,36 +187,59 @@ export default function Navbar() {
           </nav>
         </div>
 
-        {/* Mobile menu */}
+        {/* Mobile menu — solo muestra Ofertas y cuenta (el resto lo cubre el BottomNav) */}
         {menuOpen && (
-          <div className="md:hidden bg-brand-purple-900 border-t border-brand-purple-700 px-4 py-3 space-y-2">
-            <div className="relative mb-3">
+          <div className="md:hidden bg-brand-purple-900 border-t border-brand-purple-700 px-4 py-4">
+            {/* Buscador */}
+            <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input type="text" placeholder="Buscar productos..."
-                className="w-full pl-10 pr-4 py-2 rounded-xl bg-white text-gray-900 text-sm focus:outline-none" />
+                className="w-full pl-10 pr-4 py-3 rounded-xl bg-white text-gray-900 text-sm focus:outline-none"
+                onKeyDown={e => { if (e.key === 'Enter') { setMenuOpen(false); window.location.href = `/catalogo?q=${e.target.value}`; } }}
+              />
             </div>
-            {navLinks.map(link => (
-              <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)}
-                className="block text-brand-yellow-300 hover:text-brand-yellow-400 py-2 text-sm font-medium border-b border-brand-purple-700 last:border-0">
-                {link.label}
-              </Link>
-            ))}
-            {usuario ? (
-              <>
-                {usuario.rol === 'admin'
-                  ? <Link href="/admin" onClick={() => setMenuOpen(false)} className="block text-brand-yellow-300 py-2 text-sm font-medium">🛡️ Panel Admin</Link>
-                  : <Link href="/cuenta/perfil" onClick={() => setMenuOpen(false)} className="block text-brand-yellow-300 py-2 text-sm font-medium">👤 Mi cuenta</Link>
-                }
-                <button onClick={handleLogout} className="block text-red-400 py-2 text-sm font-medium text-left w-full">
-                  Cerrar sesión
-                </button>
-              </>
-            ) : (
-              <Link href="/cuenta/login" onClick={() => setMenuOpen(false)}
-                className="block text-brand-yellow-300 hover:text-brand-yellow-400 py-2 text-sm font-medium">
-                Ingresar / Registrarse
-              </Link>
-            )}
+
+            {/* Ofertas — link rápido */}
+            <Link href="/catalogo?cat=ofertas" onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-3 bg-red-500/20 text-red-300 px-4 py-3 rounded-xl text-sm font-semibold mb-3">
+              🔥 Ver ofertas del día
+            </Link>
+
+            {/* Cuenta */}
+            <div className="border-t border-brand-purple-700 pt-3 space-y-1">
+              {usuario ? (
+                <>
+                  <p className="text-brand-purple-400 text-xs font-semibold px-2 mb-2">
+                    Hola, {usuario.nombre || 'Usuario'}
+                  </p>
+                  {usuario.rol === 'admin' && (
+                    <Link href="/admin" onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-3 text-brand-yellow-300 px-3 py-3 rounded-xl hover:bg-brand-purple-800 text-sm font-medium">
+                      🛡️ Panel Admin
+                    </Link>
+                  )}
+                  {usuario.rol === 'cadete' && (
+                    <Link href="/cadete" onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-3 text-brand-yellow-300 px-3 py-3 rounded-xl hover:bg-brand-purple-800 text-sm font-medium">
+                      🏍 Mis entregas
+                    </Link>
+                  )}
+                  <Link href="/cuenta/historial" onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-3 text-brand-purple-200 px-3 py-3 rounded-xl hover:bg-brand-purple-800 text-sm font-medium">
+                    🛍️ Mis pedidos
+                  </Link>
+                  <button onClick={() => { handleLogout(); setMenuOpen(false); }}
+                    className="flex items-center gap-3 text-red-400 px-3 py-3 rounded-xl hover:bg-red-900/30 text-sm font-medium w-full text-left">
+                    Cerrar sesión
+                  </button>
+                </>
+              ) : (
+                <Link href="/cuenta/login" onClick={() => setMenuOpen(false)}
+                  className="flex items-center justify-center gap-2 bg-brand-yellow-400 text-brand-purple-900 font-bold px-4 py-3 rounded-xl text-sm">
+                  Ingresar / Registrarse
+                </Link>
+              )}
+            </div>
           </div>
         )}
       </header>

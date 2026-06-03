@@ -73,13 +73,13 @@ export default function ProductCard({ producto }) {
         {/* Controles del carrito */}
         <div className="mt-3">
           {sinStock ? (
-            <div className="w-full text-center text-xs text-gray-400 font-medium py-2 bg-gray-50 rounded-xl">
+            <div className="w-full text-center text-xs text-gray-400 font-medium py-2.5 bg-gray-50 rounded-xl">
               Sin stock
             </div>
           ) : cantidad === 0 ? (
             <button
               onClick={() => addItem(producto)}
-              className="w-full flex items-center justify-center gap-2 bg-brand-purple-800 hover:bg-brand-purple-900 text-brand-yellow-400 font-bold text-sm py-2.5 rounded-xl transition-all duration-200 active:scale-95"
+              className="w-full flex items-center justify-center gap-2 bg-brand-purple-800 hover:bg-brand-purple-900 text-brand-yellow-400 font-bold text-sm py-3 rounded-xl transition-all duration-200 active:scale-95"
             >
               <ShoppingCart className="w-4 h-4" />
               Agregar
@@ -88,16 +88,16 @@ export default function ProductCard({ producto }) {
             <div className="flex items-center justify-between bg-brand-purple-800 rounded-xl overflow-hidden">
               <button
                 onClick={() => updateCantidad(producto.id, cantidad - 1)}
-                className="text-brand-yellow-400 hover:bg-brand-purple-900 w-10 h-10 flex items-center justify-center transition-colors active:scale-90 flex-shrink-0"
+                className="text-brand-yellow-400 hover:bg-brand-purple-900 w-12 h-12 flex items-center justify-center transition-colors active:bg-brand-purple-900 flex-shrink-0"
               >
                 <Minus className="w-4 h-4" />
               </button>
-              <span className="text-white font-black text-sm flex-1 text-center">
+              <span className="text-white font-black text-base flex-1 text-center">
                 {cantidad}
               </span>
               <button
                 onClick={() => addItem(producto)}
-                className="text-brand-yellow-400 hover:bg-brand-purple-900 w-10 h-10 flex items-center justify-center transition-colors active:scale-90 flex-shrink-0"
+                className="text-brand-yellow-400 hover:bg-brand-purple-900 w-12 h-12 flex items-center justify-center transition-colors active:bg-brand-purple-900 flex-shrink-0"
               >
                 <Plus className="w-4 h-4" />
               </button>

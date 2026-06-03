@@ -42,7 +42,13 @@ function LoginForm() {
       .eq('id', user.id)
       .single();
 
-    router.push(cliente?.rol === 'admin' ? '/admin' : next);
+    const rol = cliente?.rol;
+    let destino;
+    if (rol === 'admin')  destino = '/admin';
+    else if (rol === 'cadete') destino = '/cadete';
+    else destino = (next && next !== '/cuenta/perfil') ? next : '/';
+
+    router.push(destino);
     router.refresh();
   };
 

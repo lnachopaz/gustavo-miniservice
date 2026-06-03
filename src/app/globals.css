@@ -109,3 +109,33 @@
   from { transform: translateX(120%) scale(0.8); opacity: 0; }
   to   { transform: translateX(0) scale(1); opacity: 1; }
 }
+
+/* ── Mobile UX ───────────────────────────────────────────── */
+
+/* Ocultar scrollbar en chips horizontales pero permitir scroll */
+.scroll-x-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scroll-x-hidden::-webkit-scrollbar { display: none; }
+
+/* Tap highlight más sutil en mobile */
+* { -webkit-tap-highlight-color: transparent; }
+
+/* Botones más fáciles de tocar */
+@media (max-width: 640px) {
+  .btn-primary, .btn-secondary {
+    min-height: 48px;
+  }
+  .input {
+    min-height: 48px;
+    font-size: 16px; /* evita zoom en iOS al hacer focus */
+  }
+}
+
+/* Transición suave al abrir el drawer en mobile */
+@media (max-width: 640px) {
+  .slide-in-right {
+    animation: slideInRight 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+}

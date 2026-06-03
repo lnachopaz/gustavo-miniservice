@@ -19,8 +19,8 @@ export default function CartDrawer() {
         onClick={closeCart}
       />
 
-      {/* Drawer */}
-      <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white z-50 shadow-2xl flex flex-col slide-in-right">
+      {/* Drawer — full screen en mobile, panel lateral en desktop */}
+      <div className="fixed right-0 top-0 h-full w-full sm:max-w-md bg-white z-50 shadow-2xl flex flex-col slide-in-right">
 
         {/* Header */}
         <div className="bg-brand-purple-800 px-5 py-4 flex items-center justify-between">
