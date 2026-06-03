@@ -38,6 +38,21 @@ export async function updateSession(request) {
     }
   }
 
+  // Rutas protegidas para cadete
+  if (request.nextUrl.pathname.startsWith('/cadete')) {
+    if (!user) {
+      return NextResponse.redirect(new URL('/cuenta/login?next=/cadete', request.url));
+    }
+    const { data: cliente } = await supabase
+      .from('clientes')
+      .select('rol')
+      .eq('id', user.id)
+      .single();
+    if (cliente?.rol !== 'cadete' && cliente?.rol !== 'admin') {
+      return NextResponse.redirect(new URL('/', request.url));
+    }
+  }
+
   // Rutas protegidas para usuarios
   if (request.nextUrl.pathname.startsWith('/cuenta/perfil') ||
       request.nextUrl.pathname.startsWith('/cuenta/historial')) {

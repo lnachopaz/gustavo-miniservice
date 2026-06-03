@@ -98,7 +98,9 @@ export default function Navbar() {
                   >
                     {usuario.rol === 'admin'
                       ? <Shield className="w-4 h-4" />
-                      : <User className="w-4 h-4" />
+                      : usuario.rol === 'cadete'
+                        ? <span className="text-sm">🏍</span>
+                        : <User className="w-4 h-4" />
                     }
                     <span className="max-w-24 truncate">{usuario.nombre || 'Mi cuenta'}</span>
                     <ChevronDown className={`w-3 h-3 transition-transform ${userMenu ? 'rotate-180' : ''}`} />
@@ -119,6 +121,13 @@ export default function Navbar() {
                           <Link href="/admin/usuarios" onClick={() => setUserMenu(false)}
                             className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100">
                             👥 Usuarios
+                          </Link>
+                        </>
+                      ) : usuario.rol === 'cadete' ? (
+                        <>
+                          <Link href="/cadete" onClick={() => setUserMenu(false)}
+                            className="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 font-semibold border-b border-gray-100">
+                            🏍 Mis entregas
                           </Link>
                         </>
                       ) : (

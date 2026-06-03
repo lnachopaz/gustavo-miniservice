@@ -49,7 +49,7 @@ export default function AdminDashboard() {
     { label: 'Productos activos', value: stats.productos, icon: Package,     color: 'bg-brand-purple-100 text-brand-purple-700', href: '/admin/productos' },
     { label: 'Usuarios',          value: stats.usuarios,  icon: Users,        color: 'bg-blue-100 text-blue-700',   href: '/admin/usuarios' },
     { label: 'Pedidos totales',   value: stats.pedidos,   icon: ShoppingBag,  color: 'bg-green-100 text-green-700', href: '/admin/pedidos' },
-    { label: 'Ventas totales',    value: formatPrecio(stats.ventas), icon: TrendingUp, color: 'bg-yellow-100 text-yellow-700', href: '/admin/pedidos' },
+    { label: 'Ventas totales',    value: formatPrecio(stats.ventas), icon: TrendingUp, color: 'bg-yellow-100 text-yellow-700', href: '/admin/ventas' },
   ];
 
   const ESTADO_COLOR = {

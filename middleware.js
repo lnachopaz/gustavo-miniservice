@@ -5,5 +5,5 @@ export async function middleware(request) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/cuenta/perfil', '/cuenta/historial'],
+  matcher: ['/admin/:path*', '/cadete/:path*', '/cadete', '/cuenta/perfil', '/cuenta/historial'],
 };
