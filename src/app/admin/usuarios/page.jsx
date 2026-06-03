@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
-const ROLES = ['usuario', 'admin', 'cadete'];
+const ROLES = ['usuario', 'cadete']; // 'admin' solo se asigna desde Supabase
 
 const ROL_CFG = {
   admin:   { label: '👑 Admin',   color: 'bg-brand-purple-100 text-brand-purple-800' },
@@ -223,30 +223,36 @@ export default function AdminUsuarios() {
 
                     {/* Acciones */}
                     <div className="flex items-center gap-1 flex-shrink-0">
-                      {/* Editar */}
-                      <button onClick={() => esEditando ? setEditando(null) : abrirEdicion(u)}
-                        className="p-2 rounded-lg text-gray-400 hover:text-brand-purple-700 hover:bg-brand-purple-50 transition-colors"
-                        title="Editar">
-                        <Pencil className="w-4 h-4" />
-                      </button>
+                      {/* Editar — solo si NO es admin */}
+                      {u.rol !== 'admin' && (
+                        <button onClick={() => esEditando ? setEditando(null) : abrirEdicion(u)}
+                          className="p-2 rounded-lg text-gray-400 hover:text-brand-purple-700 hover:bg-brand-purple-50 transition-colors"
+                          title="Editar">
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                      )}
 
-                      {/* Bloquear / Desbloquear */}
-                      <button onClick={() => toggleBloquear(u)}
-                        className={`p-2 rounded-lg transition-colors ${
-                          u.bloqueado
-                            ? 'text-green-600 hover:bg-green-50'
-                            : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
-                        }`}
-                        title={u.bloqueado ? 'Desbloquear' : 'Bloquear'}>
-                        {u.bloqueado ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                      </button>
+                      {/* Bloquear / Desbloquear — solo si NO es admin */}
+                      {u.rol !== 'admin' && (
+                        <button onClick={() => toggleBloquear(u)}
+                          className={`p-2 rounded-lg transition-colors ${
+                            u.bloqueado
+                              ? 'text-green-600 hover:bg-green-50'
+                              : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
+                          }`}
+                          title={u.bloqueado ? 'Desbloquear' : 'Bloquear'}>
+                          {u.bloqueado ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                        </button>
+                      )}
 
-                      {/* Eliminar */}
-                      <button onClick={() => setConfirmDel(esBorrar ? null : u.id)}
-                        className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                        title="Eliminar">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {/* Eliminar — solo si NO es admin */}
+                      {u.rol !== 'admin' && (
+                        <button onClick={() => setConfirmDel(esBorrar ? null : u.id)}
+                          className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                          title="Eliminar">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
 
                       {/* Expandir */}
                       <button onClick={() => setExpand(esExpand ? null : u.id)}
