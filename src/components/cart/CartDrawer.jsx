@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { X, ShoppingCart, Plus, Minus, Trash2, ArrowRight } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
-import { formatPrecio } from '@/data/mockData';
+import { formatPrecio } from '@/lib/productos';
 
 export default function CartDrawer() {
   const { items, isOpen, closeCart, removeItem, updateCantidad, totalPrecio, totalItems } = useCart();

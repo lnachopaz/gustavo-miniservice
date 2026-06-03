@@ -7,7 +7,7 @@ import {
   ArrowRight, CheckCircle2, Store, Bike
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
-import { formatPrecio } from '@/data/mockData';
+import { formatPrecio } from '@/lib/productos';
 import { createClient } from '@/lib/supabase/client';
 
 const METODOS_PAGO = [

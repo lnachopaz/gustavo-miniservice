@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ShoppingBag, ArrowLeft, Package, Clock, CheckCircle2, Truck, XCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { formatPrecio } from '@/data/mockData';
+import { formatPrecio } from '@/lib/productos';
 
 const ESTADO_CONFIG = {
   pendiente:  { label: 'Pendiente',  icon: Clock,        color: 'text-yellow-600 bg-yellow-50 border-yellow-200' },

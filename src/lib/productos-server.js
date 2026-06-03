@@ -1,28 +1,36 @@
 /**
- * Versión server-side de getProductos
+ * Versión server-side — usa fetch directo a la API REST de Supabase
  * Para usar en Server Components (app/page.jsx)
+ * Schema: id, codigo, descripcion, precio, stock, unidad,
+ *         categoria, foto_url, descripcion_web, activo,
+ *         destacado, oferta, precio_anterior
  */
-import { productos as mockProductos } from '@/data/mockData';
 
-function asignarCategoria(nombre) {
-  const n = (nombre || '').toLowerCase();
-  if (/leche|yogur|queso|crema|manteca|postre|danonino|flan/.test(n)) return { cat: 'Lácteos', catId: 3 };
-  if (/coca|pepsi|sprite|fanta|7up|gaseosa|soda|agua|jugo|vino|cerveza|fernet|whisky|vodka|champagne|sidra|gatorade|powerade|levite|torasso|h2o/.test(n)) return { cat: 'Bebidas', catId: 4 };
-  if (/pan |facturas|tortilla|prepizza|medialunas|budín|galletit|chips la/.test(n)) return { cat: 'Panadería', catId: 1 };
-  if (/detergente|lavandina|jabón|jabón|shampoo|acondicionador|papel higién|servilleta|esponja|fosforo|vela|desodorante|rociador|cif|magistral|ala |skip|ariel|persil|omo |colgate|oral.b|gillette|dove|rexona|nivea|pantene|head|barbijo/.test(n)) return { cat: 'Art. de Limpieza', catId: 5 };
-  if (/milanesa|hamburguesa|nuggets|suprema|patitas|helado|congel/.test(n)) return { cat: 'Congelados', catId: 9 };
-  if (/salchicha|sandwich|empanada|tarta|pollo|hummus|garbanzo|fiambre|mortadela|salame|jamón|jamon/.test(n)) return { cat: 'Rotisería', catId: 6 };
-  return { cat: 'Comestibles', catId: 2 };
+const IMAGEN_POR_CATEGORIA = {
+  'Lácteos':          'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&h=400&fit=crop',
+  'Bebidas':          'https://images.unsplash.com/photo-1554866585-cd94860890b7?w=400&h=400&fit=crop',
+  'Panadería':        'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=400&fit=crop',
+  'Art. de Limpieza': 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=400&h=400&fit=crop',
+  'Congelados':       'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=400&fit=crop',
+  'Rotisería':        'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=400&fit=crop',
+  'Comestibles':      'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=400&h=400&fit=crop',
+  'General':          'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&h=400&fit=crop',
+};
+
+function deducirCategoria(desc) {
+  const n = (desc || '').toLowerCase();
+  if (/leche|yogur|queso|crema|manteca|danonino|flan|ricota/.test(n))          return 'Lácteos';
+  if (/coca|pepsi|sprite|fanta|gaseosa|soda|agua|vino|cerveza|fernet|whisky|vodka|champagne|sidra|gatorade|levite|torasso|jugo/.test(n)) return 'Bebidas';
+  if (/\bpan\b|factura|tortilla|prepizza|medialuna|budín|galletit/.test(n))    return 'Panadería';
+  if (/detergente|lavandina|jabón|shampoo|acondicionador|esponja|fosforo|vela |desodorante|cif |colgate|ola |skip |ariel|omo |rexona|nivea|pantene|barbijo|papel hig/.test(n)) return 'Art. de Limpieza';
+  if (/milanesa|hamburguesa|nugget|suprema|patitas|helado/.test(n))            return 'Congelados';
+  if (/salchicha|sandwich|empanada|tarta|hummus|garbanzo|fiambre|mortadela|salame/.test(n)) return 'Rotisería';
+  return 'Comestibles';
 }
 
-const IMAGEN_DEFAULT = {
-  1: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=400&fit=crop',
-  2: 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=400&h=400&fit=crop',
-  3: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&h=400&fit=crop',
-  4: 'https://images.unsplash.com/photo-1554866585-cd94860890b7?w=400&h=400&fit=crop',
-  5: 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=400&h=400&fit=crop',
-  6: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=400&fit=crop',
-  9: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=400&fit=crop',
+const CAT_ID = {
+  'Panadería': 1, 'Comestibles': 2, 'Lácteos': 3,
+  'Bebidas': 4, 'Art. de Limpieza': 5, 'Rotisería': 6, 'Congelados': 9, 'General': 2,
 };
 
 function titulo(s) {
@@ -34,50 +42,44 @@ function titulo(s) {
 }
 
 function normalizar(p) {
-  const { cat, catId } = p.categoria
-    ? { cat: p.categoria, catId: asignarCategoria(p.categoria).catId }
-    : asignarCategoria(p.descripcion);
+  const catRaw = (!p.categoria || p.categoria === 'General')
+    ? deducirCategoria(p.descripcion)
+    : p.categoria;
   return {
     id:             p.id,
-    categoriaId:    catId,
-    categoria:      cat,
+    categoriaId:    CAT_ID[catRaw] ?? 2,
+    categoria:      catRaw,
     nombre:         titulo(p.descripcion),
     descripcion:    p.descripcion_web || titulo(p.descripcion),
     precio:         Number(p.precio)  || 0,
     precioAnterior: p.precio_anterior ? Number(p.precio_anterior) : null,
-    imagen:         p.foto_url || IMAGEN_DEFAULT[catId] || IMAGEN_DEFAULT[2],
+    imagen:         p.foto_url || IMAGEN_POR_CATEGORIA[catRaw] || IMAGEN_POR_CATEGORIA['General'],
     stock:          Math.max(0, Number(p.stock) || 0),
-    oferta:         p.oferta    || false,
-    destacado:      p.destacado || false,
-    unidad:         p.unidad    || 'unidad',
-    codAb:          p.codigo    || null,
-    codBarra:       '',
+    oferta:         p.oferta    ?? false,
+    destacado:      p.destacado ?? false,
+    unidad:         p.unidad    || 'Uni',
+    codigo:         p.codigo    || '',
   };
 }
 
 export async function getProductosServer() {
   try {
-    const url  = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!url || !key) return mockProductos;
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !key) return [];
 
     const res = await fetch(
-      `${url}/rest/v1/productos?select=id,codigo,descripcion,descripcion_web,precio,precio_anterior,stock,unidad,categoria,foto_url,oferta,destacado&precio=gt.0&or=(activo.is.null,activo.eq.true)&order=descripcion&limit=500`,
+      `${url}/rest/v1/productos?select=id,codigo,descripcion,descripcion_web,precio,precio_anterior,stock,unidad,categoria,foto_url,oferta,destacado&activo=eq.true&precio=gt.0&order=descripcion&limit=1000`,
       {
-        headers: {
-          'apikey':        key,
-          'Authorization': `Bearer ${key}`,
-        },
+        headers: { 'apikey': key, 'Authorization': `Bearer ${key}` },
         next: { revalidate: 60 },
       }
     );
 
-    if (!res.ok) return mockProductos;
+    if (!res.ok) return [];
     const data = await res.json();
-    if (!data?.length) return mockProductos;
-
-    return data.map(normalizar);
+    return (data || []).map(normalizar);
   } catch {
-    return mockProductos;
+    return [];
   }
 }

@@ -3,7 +3,8 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Plus, Pencil, Trash2, Save, X, Search, Upload, ImageIcon, Package } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { categorias, formatPrecio } from '@/data/mockData';
+import { categorias } from '@/data/mockData';
+import { formatPrecio } from '@/lib/productos';
 
 const EMPTY = {
   codigo: '', descripcion: '', descripcion_web: '', precio: '', precio_anterior: '',

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { ShoppingCart, Star } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
-import { formatPrecio } from '@/data/mockData';
+import { formatPrecio } from '@/lib/productos';
 
 export default function ProductCard({ producto }) {
   const { addItem } = useCart();

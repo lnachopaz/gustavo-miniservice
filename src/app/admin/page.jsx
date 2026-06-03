@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Package, Users, ShoppingBag, TrendingUp, LogOut, Settings, ChevronRight, Store } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { formatPrecio } from '@/data/mockData';
+import { formatPrecio } from '@/lib/productos';
 
 export default function AdminDashboard() {
   const router = useRouter();
