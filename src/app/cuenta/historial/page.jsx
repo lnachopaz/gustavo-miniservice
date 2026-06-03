@@ -48,7 +48,10 @@ export default function HistorialPage() {
       .update({ estado: 'cancelado' })
       .eq('id', pedidoId);
 
-    if (!error) {
+    if (error) {
+      alert('No se pudo cancelar el pedido. Si el problema persiste, contactá al local.');
+      console.error('Error al cancelar:', error.message);
+    } else {
       setPedidos(prev =>
         prev.map(p => p.id === pedidoId ? { ...p, estado: 'cancelado' } : p)
       );

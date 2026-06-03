@@ -42,9 +42,9 @@ export default function CadetePage() {
       .select(`
         id, estado, total, forma_pago, forma_entrega,
         direccion_entrega, observaciones, creado_en,
-        nombre_cliente, telefono_cliente,
+        nombre_cliente, telefono_cliente, email_cliente,
         detalle_pedidos(descripcion, cantidad),
-        clientes(nombre, apellido, telefono, direccion, barrio)
+        clientes(nombre, apellido, telefono, email, direccion, barrio)
       `)
       .eq('estado', 'en_camino')
       .order('creado_en', { ascending: true });

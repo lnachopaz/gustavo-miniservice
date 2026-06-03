@@ -73,6 +73,9 @@ export default function CarritoPage() {
           direccion_entrega: entrega === 'delivery' ? form.direccion : null,
           total:             totalPrecio,
           observaciones:     form.nota || null,
+          nombre_cliente:    `${form.nombre} ${form.apellido}`.trim() || null,
+          telefono_cliente:  form.telefono || null,
+          email_cliente:     form.email    || null,
         }])
         .select()
         .single();
