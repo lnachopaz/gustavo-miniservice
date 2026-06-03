@@ -1,7 +1,7 @@
 import { CreditCard, Truck, Store, Shield, ArrowRight, Tag, Star } from 'lucide-react';
 import Link from 'next/link';
 import { categorias } from '@/data/mockData';
-import { getProductos } from '@/lib/productos';
+import { getProductosServer as getProductos } from '@/lib/productos-server';
 import ProductCard from '@/components/catalog/ProductCard';
 import HeroBanner from '@/components/home/HeroBanner';
 
