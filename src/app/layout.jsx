@@ -1,7 +1,6 @@
 import './globals.css';
 import { CartProvider } from '@/context/CartContext';
-import Navbar from '@/components/layout/Navbar';
-import Footer from '@/components/layout/Footer';
+import ShopWrapper from '@/components/layout/ShopWrapper';
 
 export const metadata = {
   title: 'Gustavo 1° | Miniservice',
@@ -15,11 +14,9 @@ export default function RootLayout({ children }) {
       <body>
         <CartProvider>
           <div className="min-h-screen flex flex-col">
-            <Navbar />
-            <main className="flex-1">
+            <ShopWrapper>
               {children}
-            </main>
-            <Footer />
+            </ShopWrapper>
           </div>
         </CartProvider>
       </body>

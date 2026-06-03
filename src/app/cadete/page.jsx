@@ -1,127 +1,180 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Phone, MessageCircle, CheckCircle2, XCircle,
-  Package, MapPin, Clock, RefreshCw, LogOut, Bike
+  Package, MapPin, Clock, RefreshCw, LogOut,
+  ChevronDown, ChevronUp, AlertCircle
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { formatPrecio } from '@/lib/productos';
 
 export default function CadetePage() {
-  const router = useRouter();
-  const [pedidos, setPedidos]   = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [expandido, setExpand]  = useState(null);
-  const [actuando, setActuando] = useState(null);
-  const [cadete, setCadete]     = useState(null);
+  const router   = useRouter();
+  const [pedidos, setPedidos]     = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState(null);
+  const [expandido, setExpand]    = useState(null);
+  const [actuando, setActuando]   = useState(null);
+  const [cadete, setCadete]       = useState(null);
+  const [ultimaActualizacion, setUltAct] = useState(null);
 
-  const cargar = async () => {
+  const cargar = useCallback(async () => {
     setLoading(true);
-    const supabase = createClient();
+    setError(null);
+    try {
+      const supabase = createClient();
 
-    // Verificar sesión y rol
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { router.push('/cuenta/login'); return; }
+      // 1. Verificar sesión
+      const { data: { user }, error: authErr } = await supabase.auth.getUser();
+      if (authErr || !user) {
+        router.push('/cuenta/login?next=/cadete');
+        return;
+      }
 
-    const { data: perfil } = await supabase
-      .from('clientes')
-      .select('nombre, rol')
-      .eq('id', user.id)
-      .single();
+      // 2. Verificar rol
+      const { data: perfil, error: perfilErr } = await supabase
+        .from('clientes')
+        .select('nombre, apellido, rol')
+        .eq('id', user.id)
+        .single();
 
-    if (!perfil || (perfil.rol !== 'cadete' && perfil.rol !== 'admin')) {
-      router.push('/');
-      return;
+      if (perfilErr || !perfil) {
+        setError('No se pudo verificar tu cuenta.');
+        setLoading(false);
+        return;
+      }
+      if (perfil.rol !== 'cadete' && perfil.rol !== 'admin') {
+        router.push('/');
+        return;
+      }
+      setCadete(perfil);
+
+      // 3. Cargar pedidos en camino
+      // Usamos * para no fallar si alguna columna nueva no existe todavía
+      const { data, error: pedErr } = await supabase
+        .from('pedidos')
+        .select('*, detalle_pedidos(descripcion, cantidad, precio_unitario, subtotal)')
+        .eq('estado', 'en_camino')
+        .order('creado_en', { ascending: true });
+
+      if (pedErr) {
+        setError('Error al cargar pedidos: ' + pedErr.message);
+        setLoading(false);
+        return;
+      }
+
+      setPedidos(data || []);
+      setUltAct(new Date());
+    } catch (e) {
+      setError('Error inesperado: ' + e.message);
     }
-    setCadete(perfil);
-
-    // Pedidos en camino con detalle y datos del cliente
-    const { data } = await supabase
-      .from('pedidos')
-      .select(`
-        id, estado, total, forma_pago, forma_entrega,
-        direccion_entrega, observaciones, creado_en,
-        nombre_cliente, telefono_cliente, email_cliente,
-        detalle_pedidos(descripcion, cantidad),
-        clientes(nombre, apellido, telefono, email, direccion, barrio)
-      `)
-      .eq('estado', 'en_camino')
-      .order('creado_en', { ascending: true });
-
-    setPedidos(data || []);
     setLoading(false);
-  };
+  }, [router]);
 
-  useEffect(() => { cargar(); }, []);
+  useEffect(() => { cargar(); }, [cargar]);
 
   const cambiarEstado = async (pedidoId, nuevoEstado) => {
     setActuando(pedidoId);
     const supabase = createClient();
-    await supabase.from('pedidos').update({ estado: nuevoEstado }).eq('id', pedidoId);
-    setPedidos(prev => prev.filter(p => p.id !== pedidoId));
+    const { error } = await supabase
+      .from('pedidos')
+      .update({ estado: nuevoEstado })
+      .eq('id', pedidoId);
+
+    if (!error) {
+      setPedidos(prev => prev.filter(p => p.id !== pedidoId));
+    }
     setActuando(null);
   };
 
   const handleLogout = async () => {
     await createClient().auth.signOut();
-    router.push('/');
+    router.push('/cuenta/login');
   };
 
-  // Obtener teléfono del pedido o del perfil del cliente
-  const getTelefono = (p) =>
-    p.telefono_cliente || p.clientes?.telefono || null;
-
-  const getNombre = (p) =>
+  // Helpers para obtener datos del pedido
+  const getNombre = p =>
     p.nombre_cliente ||
-    [p.clientes?.nombre, p.clientes?.apellido].filter(Boolean).join(' ') ||
-    'Cliente';
+    'Cliente sin nombre';
 
-  const getDireccion = (p) =>
-    p.direccion_entrega ||
-    [p.clientes?.direccion, p.clientes?.barrio].filter(Boolean).join(' - ') ||
-    'Sin dirección';
+  const getTelefono = p =>
+    p.telefono_cliente || null;
 
+  const getDireccion = p =>
+    p.direccion_entrega || 'Sin dirección registrada';
+
+  // ── Pantalla de carga ──────────────────────────────────
   if (loading) return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-      <div className="w-10 h-10 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin" />
+    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center gap-3">
+      <div className="w-12 h-12 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin" />
+      <p className="text-gray-400 text-sm">Cargando pedidos...</p>
     </div>
   );
 
-  return (
-    <div className="min-h-screen bg-gray-900 text-white">
+  // ── Error ──────────────────────────────────────────────
+  if (error) return (
+    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center gap-4 px-6 text-center">
+      <AlertCircle className="w-12 h-12 text-red-400" />
+      <p className="text-white font-bold text-lg">Algo salió mal</p>
+      <p className="text-gray-400 text-sm">{error}</p>
+      <button onClick={cargar}
+        className="bg-yellow-400 text-gray-900 font-bold px-6 py-3 rounded-xl mt-2">
+        Reintentar
+      </button>
+    </div>
+  );
 
-      {/* Header */}
-      <header className="bg-gray-800 border-b border-gray-700 px-4 py-4 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-3">
-          <div className="bg-yellow-400 rounded-xl p-2">
-            <Bike className="w-5 h-5 text-gray-900" />
-          </div>
-          <div>
-            <p className="font-black text-yellow-400 text-lg leading-none">Cadete</p>
-            <p className="text-gray-400 text-xs">{cadete?.nombre || 'Panel de entregas'}</p>
-          </div>
+  // ── Interfaz principal ─────────────────────────────────
+  return (
+    <div className="min-h-screen bg-gray-900 text-white select-none">
+
+      {/* Header fijo */}
+      <header className="bg-gray-800 border-b border-gray-700 px-4 py-3 flex items-center justify-between sticky top-0 z-20">
+        <div>
+          <p className="text-yellow-400 font-black text-base leading-none">Panel Cadete</p>
+          <p className="text-gray-500 text-xs mt-0.5">
+            {cadete ? `${cadete.nombre} ${cadete.apellido || ''}`.trim() : ''}
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <button onClick={cargar} className="text-gray-400 hover:text-white transition-colors p-2">
-            <RefreshCw className="w-5 h-5" />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={cargar}
+            className="flex items-center gap-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-2 rounded-xl text-sm font-medium transition-colors active:scale-95"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Actualizar
           </button>
-          <button onClick={handleLogout} className="text-gray-400 hover:text-red-400 transition-colors p-2">
-            <LogOut className="w-5 h-5" />
+          <button
+            onClick={handleLogout}
+            className="bg-gray-700 hover:bg-red-900 text-gray-400 hover:text-red-300 p-2 rounded-xl transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
           </button>
         </div>
       </header>
 
-      <div className="max-w-lg mx-auto px-4 py-6">
+      {/* Contenido */}
+      <div className="px-4 py-4 max-w-lg mx-auto">
 
+        {/* Sin pedidos */}
         {pedidos.length === 0 ? (
-          <div className="text-center py-20">
-            <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <p className="text-gray-300 font-bold text-lg">¡Todo entregado!</p>
-            <p className="text-gray-500 text-sm mt-1">No hay pedidos en camino en este momento.</p>
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <div className="w-20 h-20 bg-green-900/40 rounded-full flex items-center justify-center">
+              <CheckCircle2 className="w-10 h-10 text-green-400" />
+            </div>
+            <p className="text-white font-bold text-xl">¡Todo entregado!</p>
+            <p className="text-gray-500 text-sm text-center">
+              No hay pedidos en camino en este momento.
+            </p>
+            {ultimaActualizacion && (
+              <p className="text-gray-600 text-xs">
+                Última actualización: {ultimaActualizacion.toLocaleTimeString('es-AR')}
+              </p>
+            )}
             <button
               onClick={cargar}
-              className="mt-6 flex items-center gap-2 bg-yellow-400 text-gray-900 font-bold px-5 py-2.5 rounded-xl mx-auto hover:bg-yellow-300 transition-colors"
+              className="mt-2 flex items-center gap-2 bg-yellow-400 text-gray-900 font-bold px-6 py-3 rounded-xl active:scale-95 transition-transform"
             >
               <RefreshCw className="w-4 h-4" />
               Actualizar
@@ -129,130 +182,148 @@ export default function CadetePage() {
           </div>
         ) : (
           <>
-            <p className="text-gray-400 text-sm mb-4 text-center">
-              {pedidos.length} pedido{pedidos.length !== 1 ? 's' : ''} para entregar
-            </p>
+            {/* Contador */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-gray-400 text-sm">
+                <span className="text-yellow-400 font-black text-lg">{pedidos.length}</span>
+                {' '}pedido{pedidos.length !== 1 ? 's' : ''} para entregar
+              </p>
+              {ultimaActualizacion && (
+                <p className="text-gray-600 text-xs">
+                  {ultimaActualizacion.toLocaleTimeString('es-AR')}
+                </p>
+              )}
+            </div>
 
+            {/* Lista de pedidos */}
             <div className="space-y-4">
               {pedidos.map((p, idx) => {
-                const telefono  = getTelefono(p);
                 const nombre    = getNombre(p);
+                const telefono  = getTelefono(p);
                 const direccion = getDireccion(p);
                 const isOpen    = expandido === p.id;
-                const waNum     = telefono ? telefono.replace(/\D/g, '') : null;
+                const waNum     = telefono?.replace(/\D/g, '');
+                const yaAgregado = actuando === p.id;
 
                 return (
-                  <div key={p.id} className="bg-gray-800 rounded-2xl border border-gray-700 overflow-hidden">
+                  <div key={p.id} className="bg-gray-800 rounded-2xl overflow-hidden border border-gray-700">
 
-                    {/* Número de orden y hora */}
+                    {/* Barra superior amarilla */}
                     <div className="bg-yellow-400 px-4 py-2 flex items-center justify-between">
                       <span className="text-gray-900 font-black text-sm">
-                        #{idx + 1} · Pedido {String(p.id).slice(-6).toUpperCase()}
+                        Entrega #{idx + 1}
                       </span>
-                      <span className="text-gray-700 text-xs flex items-center gap-1">
+                      <div className="flex items-center gap-1.5 text-gray-700 text-xs">
                         <Clock className="w-3 h-3" />
-                        {new Date(p.creado_en).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
-                      </span>
+                        {new Date(p.creado_en).toLocaleTimeString('es-AR', {
+                          hour: '2-digit', minute: '2-digit'
+                        })}
+                      </div>
                     </div>
 
-                    <div className="p-4">
-                      {/* Cliente */}
-                      <div className="flex items-start gap-3 mb-4">
-                        <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
-                          <span className="text-yellow-400 font-black text-lg">
-                            {nombre.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-bold text-white text-lg leading-tight">{nombre}</p>
-                          {telefono && (
-                            <p className="text-gray-400 text-sm">{telefono}</p>
-                          )}
-                        </div>
-                        <p className="text-yellow-400 font-black text-lg flex-shrink-0">
-                          {formatPrecio(p.total)}
-                        </p>
-                      </div>
+                    <div className="p-4 space-y-4">
 
-                      {/* Dirección */}
-                      <div className="bg-gray-700 rounded-xl p-3 mb-4 flex items-start gap-2">
-                        <MapPin className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
-                        <div>
-                          <p className="text-white font-semibold text-base leading-snug">{direccion}</p>
-                          <p className="text-gray-400 text-xs mt-0.5">
-                            {p.forma_pago === 'efectivo' ? '💵 Cobrar en efectivo' : '✅ Ya pagado'}
+                      {/* Cliente */}
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0 text-2xl font-black text-yellow-400">
+                          {nombre.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-bold text-lg leading-tight truncate">{nombre}</p>
+                          {telefono
+                            ? <p className="text-gray-400 text-sm">{telefono}</p>
+                            : <p className="text-gray-600 text-xs italic">Sin teléfono registrado</p>
+                          }
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-yellow-400 font-black text-xl">{formatPrecio(p.total)}</p>
+                          <p className={`text-xs font-semibold mt-0.5 ${
+                            p.forma_pago === 'efectivo'
+                              ? 'text-orange-400'
+                              : 'text-green-400'
+                          }`}>
+                            {p.forma_pago === 'efectivo' ? '💵 Cobrar' : '✅ Pagado'}
                           </p>
                         </div>
                       </div>
 
-                      {/* Productos (colapsable) */}
+                      {/* Dirección */}
+                      <div className="bg-gray-700 rounded-xl p-3 flex items-start gap-2.5">
+                        <MapPin className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                        <p className="text-white font-semibold text-base leading-snug">{direccion}</p>
+                      </div>
+
+                      {/* Botones de contacto */}
+                      {telefono && (
+                        <div className="grid grid-cols-2 gap-2">
+                          <a href={`tel:${telefono}`}
+                            className="flex items-center justify-center gap-2 bg-blue-600 active:bg-blue-700 text-white font-bold py-3.5 rounded-xl text-sm transition-colors">
+                            <Phone className="w-4 h-4" />
+                            Llamar
+                          </a>
+                          <a
+                            href={`https://wa.me/${waNum}?text=${encodeURIComponent(`Hola ${nombre}, soy el cadete de Gustavo 1°. Estoy camino a entregarte tu pedido.`)}`}
+                            target="_blank" rel="noopener noreferrer"
+                            className="flex items-center justify-center gap-2 bg-green-600 active:bg-green-700 text-white font-bold py-3.5 rounded-xl text-sm transition-colors">
+                            <MessageCircle className="w-4 h-4" />
+                            WhatsApp
+                          </a>
+                        </div>
+                      )}
+
+                      {/* Detalle de productos (expandible) */}
                       <button
                         onClick={() => setExpand(isOpen ? null : p.id)}
-                        className="w-full flex items-center justify-between text-gray-400 text-sm mb-3 hover:text-white transition-colors"
+                        className="w-full flex items-center justify-between text-gray-400 text-sm py-1 hover:text-gray-200 transition-colors"
                       >
                         <span className="flex items-center gap-1.5">
                           <Package className="w-4 h-4" />
-                          Ver productos ({(p.detalle_pedidos || []).length} ítems)
+                          {(p.detalle_pedidos || []).length} producto{(p.detalle_pedidos || []).length !== 1 ? 's' : ''}
                         </span>
-                        <span>{isOpen ? '▲' : '▼'}</span>
+                        {isOpen
+                          ? <ChevronUp className="w-4 h-4" />
+                          : <ChevronDown className="w-4 h-4" />
+                        }
                       </button>
 
                       {isOpen && (
-                        <div className="bg-gray-750 bg-gray-900/50 rounded-xl p-3 mb-4 space-y-1.5">
+                        <div className="bg-gray-900/60 rounded-xl p-3 space-y-2">
                           {(p.detalle_pedidos || []).map((item, i) => (
-                            <div key={i} className="flex items-center gap-2 text-sm">
-                              <span className="text-yellow-400 font-bold w-6 text-center">×{item.cantidad}</span>
-                              <span className="text-gray-300 flex-1">{item.descripcion}</span>
+                            <div key={i} className="flex items-center gap-3 text-sm">
+                              <span className="text-yellow-400 font-black w-6 text-center flex-shrink-0">
+                                ×{item.cantidad}
+                              </span>
+                              <span className="text-gray-300 flex-1 leading-snug">{item.descripcion}</span>
                             </div>
                           ))}
                           {p.observaciones && (
                             <div className="mt-2 pt-2 border-t border-gray-700">
-                              <p className="text-gray-400 text-xs"><strong className="text-gray-300">Nota:</strong> {p.observaciones}</p>
+                              <p className="text-gray-500 text-xs">
+                                <span className="text-gray-400 font-semibold">Nota: </span>
+                                {p.observaciones}
+                              </p>
                             </div>
                           )}
                         </div>
                       )}
 
-                      {/* Botones de acción */}
-                      <div className="grid grid-cols-2 gap-2 mb-2">
-                        {telefono && (
-                          <>
-                            <a
-                              href={`tel:${telefono}`}
-                              className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors text-sm"
-                            >
-                              <Phone className="w-4 h-4" />
-                              Llamar
-                            </a>
-                            <a
-                              href={`https://wa.me/${waNum}?text=Hola%20${encodeURIComponent(nombre)}%2C%20soy%20el%20cadete%20de%20Gustavo%201%C2%B0.%20Estoy%20camino%20a%20entregarte%20tu%20pedido.`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition-colors text-sm"
-                            >
-                              <MessageCircle className="w-4 h-4" />
-                              WhatsApp
-                            </a>
-                          </>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2">
+                      {/* Acciones */}
+                      <div className="grid grid-cols-2 gap-3 pt-1">
                         <button
                           onClick={() => cambiarEstado(p.id, 'entregado')}
-                          disabled={actuando === p.id}
-                          className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-colors text-sm"
+                          disabled={yaAgregado}
+                          className="flex items-center justify-center gap-2 bg-green-500 active:bg-green-600 disabled:opacity-50 text-white font-black py-4 rounded-xl text-base transition-colors"
                         >
-                          <CheckCircle2 className="w-4 h-4" />
-                          {actuando === p.id ? '...' : 'Entregado'}
+                          <CheckCircle2 className="w-5 h-5" />
+                          {yaAgregado ? '...' : 'Entregado'}
                         </button>
                         <button
                           onClick={() => cambiarEstado(p.id, 'cancelado')}
-                          disabled={actuando === p.id}
-                          className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-colors text-sm"
+                          disabled={yaAgregado}
+                          className="flex items-center justify-center gap-2 bg-gray-700 active:bg-red-900 border border-red-800 disabled:opacity-50 text-red-400 font-bold py-4 rounded-xl text-base transition-colors"
                         >
-                          <XCircle className="w-4 h-4" />
-                          {actuando === p.id ? '...' : 'Cancelar'}
+                          <XCircle className="w-5 h-5" />
+                          {yaAgregado ? '...' : 'Cancelar'}
                         </button>
                       </div>
                     </div>

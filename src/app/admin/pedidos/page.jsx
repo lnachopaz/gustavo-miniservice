@@ -52,8 +52,17 @@ export default function AdminPedidos() {
   const cambiarEstado = async (pedidoId, nuevoEstado) => {
     setAct(pedidoId);
     const supabase = createClient();
-    const { error } = await supabase.from('pedidos').update({ estado: nuevoEstado }).eq('id', pedidoId);
-    if (!error) setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, estado: nuevoEstado } : p));
+    const { error } = await supabase
+      .from('pedidos')
+      .update({ estado: nuevoEstado })
+      .eq('id', pedidoId);
+
+    if (error) {
+      console.error('Error al cambiar estado:', error);
+      alert(`No se pudo cambiar el estado: ${error.message}\n\nRevisá las políticas RLS en Supabase.`);
+    } else {
+      setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, estado: nuevoEstado } : p));
+    }
     setAct(null);
   };
 
@@ -61,10 +70,35 @@ export default function AdminPedidos() {
   const borrarPedido = async (pedidoId) => {
     setAct(pedidoId);
     const supabase = createClient();
-    // Primero borra el detalle, luego el pedido
-    await supabase.from('detalle_pedidos').delete().eq('pedido_id', pedidoId);
-    await supabase.from('pedidos').delete().eq('id', pedidoId);
-    setPedidos(prev => prev.filter(p => p.id !== pedidoId));
+
+    // 1. Borrar el detalle primero (FK constraint)
+    const { error: errDetalle } = await supabase
+      .from('detalle_pedidos')
+      .delete()
+      .eq('pedido_id', pedidoId);
+
+    if (errDetalle) {
+      console.error('Error al borrar detalle_pedidos:', errDetalle);
+      alert(`No se pudo eliminar el pedido: ${errDetalle.message}\n\nRevisá las políticas RLS en Supabase.`);
+      setAct(null);
+      setConfBorrar(null);
+      return;
+    }
+
+    // 2. Borrar el pedido
+    const { error: errPedido } = await supabase
+      .from('pedidos')
+      .delete()
+      .eq('id', pedidoId);
+
+    if (errPedido) {
+      console.error('Error al borrar pedido:', errPedido);
+      alert(`No se pudo eliminar el pedido: ${errPedido.message}\n\nRevisá las políticas RLS en Supabase.`);
+    } else {
+      // Solo actualiza la UI si realmente se borró en la DB
+      setPedidos(prev => prev.filter(p => p.id !== pedidoId));
+    }
+
     setConfBorrar(null);
     setAct(null);
   };
@@ -86,8 +120,15 @@ export default function AdminPedidos() {
   const guardarEdicion = async (pedidoId) => {
     setAct(pedidoId);
     const supabase = createClient();
-    const { error } = await supabase.from('pedidos').update(editForm).eq('id', pedidoId);
-    if (!error) {
+    const { error } = await supabase
+      .from('pedidos')
+      .update(editForm)
+      .eq('id', pedidoId);
+
+    if (error) {
+      console.error('Error al guardar edición:', error);
+      alert(`No se pudo guardar: ${error.message}\n\nRevisá las políticas RLS en Supabase.`);
+    } else {
       setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, ...editForm } : p));
     }
     setEditando(null);
