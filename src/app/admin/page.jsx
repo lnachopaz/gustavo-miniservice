@@ -153,7 +153,7 @@ export default function AdminDashboard() {
                     {p.estado}
                   </span>
                   <p className="text-sm text-gray-700 flex-1">
-                    {p.nombre_cliente || 'Cliente'} · #{p.id.slice(-6).toUpperCase()}
+                    {p.nombre_cliente || 'Cliente'} · #{String(p.id).slice(-6).toUpperCase()}
                   </p>
                   <p className="text-sm font-bold text-gray-900">{formatPrecio(p.total)}</p>
                   <p className="text-xs text-gray-400">

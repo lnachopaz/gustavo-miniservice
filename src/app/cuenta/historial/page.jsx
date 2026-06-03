@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ShoppingBag, ArrowLeft, Package, Clock, CheckCircle2, Truck, XCircle } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, Package, Clock, CheckCircle2, Truck, XCircle, AlertTriangle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { formatPrecio } from '@/lib/productos';
 
@@ -16,9 +16,11 @@ const ESTADO_CONFIG = {
 
 export default function HistorialPage() {
   const router = useRouter();
-  const [pedidos, setPedidos]   = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [expandido, setExpand]  = useState(null);
+  const [pedidos, setPedidos]         = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [expandido, setExpand]        = useState(null);
+  const [cancelando, setCancelando]   = useState(null); // id del pedido que se está cancelando
+  const [confirmCancel, setConfirm]   = useState(null); // id del pedido a confirmar cancelación
 
   useEffect(() => {
     const load = async () => {
@@ -37,6 +39,23 @@ export default function HistorialPage() {
     };
     load();
   }, []);
+
+  const handleCancelar = async (pedidoId) => {
+    setCancelando(pedidoId);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('pedidos')
+      .update({ estado: 'cancelado' })
+      .eq('id', pedidoId);
+
+    if (!error) {
+      setPedidos(prev =>
+        prev.map(p => p.id === pedidoId ? { ...p, estado: 'cancelado' } : p)
+      );
+    }
+    setCancelando(null);
+    setConfirm(null);
+  };
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -65,6 +84,7 @@ export default function HistorialPage() {
             const cfg = ESTADO_CONFIG[pedido.estado] || ESTADO_CONFIG.pendiente;
             const Icon = cfg.icon;
             const isOpen = expandido === pedido.id;
+            const puedeCancel = pedido.estado === 'pendiente';
 
             return (
               <div key={pedido.id} className="card overflow-hidden">
@@ -86,6 +106,7 @@ export default function HistorialPage() {
 
                 {isOpen && (
                   <div className="border-t border-gray-100 px-5 pb-5 pt-4 fade-in">
+                    {/* Detalle de items */}
                     <div className="space-y-2 mb-4">
                       {(pedido.detalle_pedidos || []).map((item, i) => (
                         <div key={i} className="flex items-center gap-3">
@@ -97,12 +118,48 @@ export default function HistorialPage() {
                         </div>
                       ))}
                     </div>
-                    <div className="bg-gray-50 rounded-xl p-3 text-xs text-gray-600 space-y-1">
+
+                    {/* Info del pedido */}
+                    <div className="bg-gray-50 rounded-xl p-3 text-xs text-gray-600 space-y-1 mb-4">
                       <p><strong>Entrega:</strong> {pedido.forma_entrega === 'retiro' ? 'Retiro en local' : 'Delivery'}</p>
                       <p><strong>Pago:</strong> {pedido.forma_pago}</p>
                       {pedido.direccion_entrega && <p><strong>Dirección:</strong> {pedido.direccion_entrega}</p>}
                       {pedido.observaciones && <p><strong>Nota:</strong> {pedido.observaciones}</p>}
                     </div>
+
+                    {/* Botón cancelar — solo para pedidos pendientes */}
+                    {puedeCancel && (
+                      confirmCancel === pedido.id ? (
+                        <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+                          <div className="flex items-center gap-2 mb-3">
+                            <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                            <p className="text-sm text-red-700 font-medium">¿Confirmás la cancelación?</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleCancelar(pedido.id)}
+                              disabled={cancelando === pedido.id}
+                              className="flex-1 bg-red-500 hover:bg-red-600 disabled:opacity-60 text-white text-sm font-semibold py-2 rounded-lg transition-colors"
+                            >
+                              {cancelando === pedido.id ? 'Cancelando...' : 'Sí, cancelar'}
+                            </button>
+                            <button
+                              onClick={() => setConfirm(null)}
+                              className="flex-1 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-semibold py-2 rounded-lg transition-colors"
+                            >
+                              No, volver
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setConfirm(pedido.id)}
+                          className="w-full border border-red-300 text-red-600 hover:bg-red-50 text-sm font-semibold py-2.5 rounded-xl transition-colors"
+                        >
+                          Cancelar pedido
+                        </button>
+                      )
+                    )}
                   </div>
                 )}
               </div>

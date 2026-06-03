@@ -1,16 +1,21 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, Star } from 'lucide-react';
+import { Plus, Minus, ShoppingCart } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { formatPrecio } from '@/lib/productos';
 
 export default function ProductCard({ producto }) {
-  const { addItem } = useCart();
+  const { addItem, updateCantidad, items } = useCart();
+
+  const cartItem = items.find(i => i.id === producto.id);
+  const cantidad = cartItem?.cantidad || 0;
 
   const descuento = producto.precioAnterior
     ? Math.round((1 - producto.precio / producto.precioAnterior) * 100)
     : null;
+
+  const sinStock = producto.stock <= 0;
 
   return (
     <div className="card group flex flex-col overflow-hidden">
@@ -34,8 +39,9 @@ export default function ProductCard({ producto }) {
           )}
         </div>
 
-        {/* Stock bajo */}
-        {producto.stock <= 5 && (
+        {/* Stock bajo — solo si es Uni y queda entre 1 y 4 */}
+        {producto.stock > 0 && producto.stock < 5 &&
+         (producto.unidad || '').toLowerCase() === 'uni' && (
           <div className="absolute bottom-2 right-2 bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
             ¡Últimas unidades!
           </div>
@@ -53,26 +59,50 @@ export default function ProductCard({ producto }) {
         </Link>
 
         {/* Precio */}
-        <div className="mt-3 flex items-end justify-between gap-2">
-          <div>
-            <p className="text-brand-purple-800 font-black text-lg leading-none">
-              {formatPrecio(producto.precio)}
+        <div className="mt-1">
+          <p className="text-brand-purple-800 font-black text-lg leading-none">
+            {formatPrecio(producto.precio)}
+          </p>
+          {producto.precioAnterior && (
+            <p className="text-gray-400 text-xs line-through mt-0.5">
+              {formatPrecio(producto.precioAnterior)}
             </p>
-            {producto.precioAnterior && (
-              <p className="text-gray-400 text-xs line-through mt-0.5">
-                {formatPrecio(producto.precioAnterior)}
-              </p>
-            )}
-          </div>
+          )}
+        </div>
 
-          <button
-            onClick={() => addItem(producto)}
-            disabled={producto.stock === 0}
-            className="bg-brand-purple-800 hover:bg-brand-purple-900 disabled:bg-gray-300 text-brand-yellow-400 p-2 rounded-xl transition-all duration-200 active:scale-95 flex-shrink-0"
-            title="Agregar al carrito"
-          >
-            <ShoppingCart className="w-4 h-4" />
-          </button>
+        {/* Controles del carrito */}
+        <div className="mt-3">
+          {sinStock ? (
+            <div className="w-full text-center text-xs text-gray-400 font-medium py-2 bg-gray-50 rounded-xl">
+              Sin stock
+            </div>
+          ) : cantidad === 0 ? (
+            <button
+              onClick={() => addItem(producto)}
+              className="w-full flex items-center justify-center gap-2 bg-brand-purple-800 hover:bg-brand-purple-900 text-brand-yellow-400 font-bold text-sm py-2.5 rounded-xl transition-all duration-200 active:scale-95"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              Agregar
+            </button>
+          ) : (
+            <div className="flex items-center justify-between bg-brand-purple-800 rounded-xl overflow-hidden">
+              <button
+                onClick={() => updateCantidad(producto.id, cantidad - 1)}
+                className="text-brand-yellow-400 hover:bg-brand-purple-900 w-10 h-10 flex items-center justify-center transition-colors active:scale-90 flex-shrink-0"
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+              <span className="text-white font-black text-sm flex-1 text-center">
+                {cantidad}
+              </span>
+              <button
+                onClick={() => addItem(producto)}
+                className="text-brand-yellow-400 hover:bg-brand-purple-900 w-10 h-10 flex items-center justify-center transition-colors active:scale-90 flex-shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
