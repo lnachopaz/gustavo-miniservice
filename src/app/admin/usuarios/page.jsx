@@ -74,7 +74,7 @@ export default function AdminUsuarios() {
                         </div>
                         <div>
                           <p className="font-medium text-gray-900">
-                            {[u.nombre, u.spellido].filter(Boolean).join(' ') || 'Sin nombre'}
+                            {[u.nombre, u.apellido].filter(Boolean).join(' ') || 'Sin nombre'}
                           </p>
                           <p className="text-xs text-gray-400">{u.id.slice(0, 8)}…</p>
                         </div>

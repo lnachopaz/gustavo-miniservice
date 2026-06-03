@@ -45,7 +45,7 @@ export default function RegistroPage() {
         id:        data.user.id,
         email:     form.email,
         nombre:    form.nombre,
-        spellido:  form.apellido,  // nombre de columna en la tabla del amigo
+        apellido:  form.apellido,
         telefono:  form.telefono,
         direccion: form.direccion,
         barrio:    form.barrio,

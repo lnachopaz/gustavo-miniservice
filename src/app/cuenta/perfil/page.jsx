@@ -23,7 +23,7 @@ export default function PerfilPage() {
       const { data } = await supabase.from('clientes').select('*').eq('id', user.id).single();
       if (data) setForm({
         nombre:    data.nombre    || '',
-        apellido:  data.spellido  || '',   // columna "spellido" en la BD
+        apellido:  data.apellido  || '',
         telefono:  data.telefono  || '',
         direccion: data.direccion || '',
         barrio:    data.barrio    || '',
@@ -40,7 +40,7 @@ export default function PerfilPage() {
     const supabase = createClient();
     await supabase.from('clientes').update({
       nombre:    form.nombre,
-      spellido:  form.apellido,
+      apellido:  form.apellido,
       telefono:  form.telefono,
       direccion: form.direccion,
       barrio:    form.barrio,
