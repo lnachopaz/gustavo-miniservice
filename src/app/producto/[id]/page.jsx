@@ -116,7 +116,11 @@ export default function ProductoPage() {
           <div className="flex items-center gap-2 mb-5">
             <div className={`w-2 h-2 rounded-full ${producto.stock > 5 ? 'bg-green-500' : producto.stock > 0 ? 'bg-orange-500' : 'bg-red-500'}`} />
             <span className={`text-sm font-medium ${producto.stock > 5 ? 'text-green-700' : producto.stock > 0 ? 'text-orange-600' : 'text-red-600'}`}>
-              {producto.stock > 5 ? 'Disponible' : producto.stock > 0 ? `Solo ${producto.stock} en stock` : 'Sin stock'}
+              {producto.stock <= 0
+                ? 'Sin stock'
+                : producto.stock > 0 && producto.stock < 5 && (producto.unidad || '').toLowerCase() === 'uni'
+                  ? `¡Últimas ${producto.stock} unidades!`
+                  : 'Disponible'}
             </span>
           </div>
 
