@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ShoppingCart, Search, Menu, X, Store, User, LogOut, ChevronDown, Shield } from 'lucide-react';
+import { ShoppingCart, Search, Menu, X, Store, User, LogOut, ChevronDown, Shield, CheckCircle2 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import CartDrawer from '@/components/cart/CartDrawer';
 import { createClient } from '@/lib/supabase/client';
@@ -13,7 +13,7 @@ export default function Navbar() {
   const [userMenu, setUserMenu]   = useState(false);
   const [searchQuery, setSearch]  = useState('');
   const [usuario, setUsuario]     = useState(null); // { nombre, rol }
-  const { totalItems, toggleCart } = useCart();
+  const { totalItems, toggleCart, cartToast } = useCart();
   const router = useRouter();
 
   useEffect(() => {
@@ -214,6 +214,20 @@ export default function Navbar() {
 
       {/* Cerrar user menu al hacer click afuera */}
       {userMenu && <div className="fixed inset-0 z-40" onClick={() => setUserMenu(false)} />}
+
+      {/* Toast: producto agregado al carrito */}
+      {cartToast.visible && (
+        <div className="cart-toast fixed bottom-6 right-4 z-[60] flex items-center gap-3 bg-gray-900 text-white px-4 py-3 rounded-2xl shadow-2xl max-w-xs">
+          {cartToast.imagen && (
+            <img src={cartToast.imagen} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-gray-400 font-medium">Agregado al carrito</p>
+            <p className="text-sm font-bold truncate">{cartToast.nombre}</p>
+          </div>
+          <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0" />
+        </div>
+      )}
 
       <CartDrawer />
     </>

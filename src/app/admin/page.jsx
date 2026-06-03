@@ -21,7 +21,7 @@ export default function AdminDashboard() {
       const [{ count: cProds }, { count: cUsers }, { count: cPedidos }, { data: ventas }, { data: pedidos }] =
         await Promise.all([
           supabase.from('productos').select('*', { count: 'exact', head: true }).eq('activo', true),
-          supabase.from('perfiles').select('*', { count: 'exact', head: true }),
+          supabase.from('clientes').select('*', { count: 'exact', head: true }),
           supabase.from('pedidos').select('*', { count: 'exact', head: true }),
           supabase.from('pedidos').select('total'),
           supabase.from('pedidos').select('*').order('creado_en', { ascending: false }).limit(5),

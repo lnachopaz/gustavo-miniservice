@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useReducer, useEffect } from 'react';
+import { createContext, useContext, useReducer, useState, useRef } from 'react';
 
 const CartContext = createContext(null);
 
@@ -53,24 +53,30 @@ const cartReducer = (state, action) => {
   }
 };
 
-const initialState = {
-  items: [],
-  isOpen: false,
-};
+const initialState = { items: [], isOpen: false };
 
 export function CartProvider({ children }) {
   const [state, dispatch] = useReducer(cartReducer, initialState);
+  const [cartToast, setCartToast] = useState({ visible: false, nombre: '', imagen: '' });
+  const toastTimer = useRef(null);
 
-  const totalItems = state.items.reduce((sum, i) => sum + i.cantidad, 0);
+  const totalItems  = state.items.reduce((sum, i) => sum + i.cantidad, 0);
   const totalPrecio = state.items.reduce((sum, i) => sum + i.precio * i.cantidad, 0);
 
-  const addItem    = (producto) => { dispatch({ type: 'ADD_ITEM', payload: producto }); dispatch({ type: 'OPEN_CART' }); };
-  const removeItem = (id)       => dispatch({ type: 'REMOVE_ITEM', payload: id });
-  const updateCantidad = (id, cantidad) => dispatch({ type: 'UPDATE_CANTIDAD', payload: { id, cantidad } });
-  const clearCart  = ()         => dispatch({ type: 'CLEAR_CART' });
-  const toggleCart = ()         => dispatch({ type: 'TOGGLE_CART' });
-  const openCart   = ()         => dispatch({ type: 'OPEN_CART' });
-  const closeCart  = ()         => dispatch({ type: 'CLOSE_CART' });
+  const addItem = (producto) => {
+    dispatch({ type: 'ADD_ITEM', payload: producto });
+    // Mostrar toast sin abrir el drawer
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setCartToast({ visible: true, nombre: producto.nombre, imagen: producto.imagen || '' });
+    toastTimer.current = setTimeout(() => setCartToast({ visible: false, nombre: '', imagen: '' }), 2500);
+  };
+
+  const removeItem      = (id)             => dispatch({ type: 'REMOVE_ITEM',      payload: id });
+  const updateCantidad  = (id, cantidad)   => dispatch({ type: 'UPDATE_CANTIDAD',  payload: { id, cantidad } });
+  const clearCart       = ()               => dispatch({ type: 'CLEAR_CART' });
+  const toggleCart      = ()               => dispatch({ type: 'TOGGLE_CART' });
+  const openCart        = ()               => dispatch({ type: 'OPEN_CART' });
+  const closeCart       = ()               => dispatch({ type: 'CLOSE_CART' });
 
   return (
     <CartContext.Provider value={{
@@ -78,6 +84,7 @@ export function CartProvider({ children }) {
       isOpen: state.isOpen,
       totalItems,
       totalPrecio,
+      cartToast,
       addItem,
       removeItem,
       updateCantidad,
