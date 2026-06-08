@@ -1,20 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   ShoppingCart, ArrowLeft, Trash2, Plus, Minus,
-  ArrowRight, CheckCircle2, Store, Bike
+  ArrowRight, CheckCircle2, Store, Bike, AlertCircle
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { formatPrecio } from '@/lib/productos';
 import { createClient } from '@/lib/supabase/client';
 
+// Solo 3 métodos de pago
 const METODOS_PAGO = [
-  { id: 'mercadopago',   label: 'Mercado Pago',             icon: '💳', desc: 'Tarjetas, QR, billetera virtual', badge: 'Recomendado' },
-  { id: 'tarjeta',       label: 'Tarjeta débito/crédito',    icon: '🏦', desc: 'Todas las tarjetas aceptadas',    badge: null },
-  { id: 'transferencia', label: 'Transferencia bancaria',    icon: '📲', desc: 'CVU / Alias / CBU',               badge: null },
-  { id: 'efectivo',      label: 'Efectivo',                  icon: '💵', desc: 'Al retirar o al recibir',         badge: null },
+  { id: 'mercadopago',   label: 'Mercado Pago',          icon: '💳', desc: 'Tarjetas, QR, billetera virtual — pagás en la app de MP', badge: 'Recomendado' },
+  { id: 'transferencia', label: 'Transferencia bancaria', icon: '📲', desc: 'CVU / Alias / CBU — enviá el comprobante por WhatsApp',   badge: null },
+  { id: 'efectivo',      label: 'Efectivo',               icon: '💵', desc: 'Al retirar en el local o al recibir el pedido',           badge: null },
 ];
 
 const METODOS_ENTREGA = [
@@ -29,9 +29,40 @@ export default function CarritoPage() {
   const [entrega, setEntrega]       = useState('retiro');
   const [loading, setLoading]       = useState(false);
   const [pedidoId, setPedidoId]     = useState(null);
-  const [form, setForm] = useState({ nombre: '', apellido: '', telefono: '', email: '', direccion: '', nota: '' });
+  const [mpError, setMpError]       = useState(null);
+  const [form, setForm] = useState({
+    nombre: '', apellido: '', telefono: '', email: '',
+    direccion: '', nota: '', notaCadete: '',
+  });
 
-  const handleFormChange = e => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
+  // Detectar retorno desde Mercado Pago
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const mpStatus  = params.get('mp_status');
+    const pedidoParam = params.get('pedido');
+
+    if (mpStatus === 'approved' && pedidoParam) {
+      clearCart();
+      setPedidoId(pedidoParam);
+      setMetodoPago('mercadopago');
+      setPaso(3);
+      window.history.replaceState({}, '', '/carrito');
+    } else if (mpStatus === 'failure') {
+      setMpError('El pago con Mercado Pago no fue aprobado. Podés intentar de nuevo o elegir otro método.');
+      window.history.replaceState({}, '', '/carrito');
+    } else if (mpStatus === 'pending' && pedidoParam) {
+      clearCart();
+      setPedidoId(pedidoParam);
+      setMetodoPago('mercadopago');
+      setPaso(3);
+      window.history.replaceState({}, '', '/carrito');
+    }
+  }, []);
+
+  const handleFormChange = e => {
+    setMpError(null);
+    setForm(p => ({ ...p, [e.target.name]: e.target.value }));
+  };
 
   // Pre-completar datos si el usuario está logueado
   const cargarDatosUsuario = async () => {
@@ -56,50 +87,83 @@ export default function CarritoPage() {
     setPaso(2);
   };
 
+  // Crea el pedido en Supabase y devuelve el objeto pedido
+  const crearPedidoEnDB = async (estado = 'pendiente') => {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const { data: pedido, error } = await supabase
+      .from('pedidos')
+      .insert([{
+        cliente_id:        user?.id || null,
+        estado,
+        forma_entrega:     entrega,
+        forma_pago:        metodoPago,
+        direccion_entrega: entrega === 'delivery' ? form.direccion : null,
+        total:             totalPrecio,
+        observaciones:     form.nota || null,
+        nota_cadete:       entrega === 'delivery' ? (form.notaCadete || null) : null,
+        nombre_cliente:    `${form.nombre} ${form.apellido}`.trim() || null,
+        telefono_cliente:  form.telefono || null,
+        email_cliente:     form.email    || null,
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    const detalles = items.map(item => ({
+      pedido_id:       pedido.id,
+      codigo_producto: String(item.codAb || item.id),
+      descripcion:     item.nombre,
+      cantidad:        item.cantidad,
+      precio_unitario: item.precio,
+      subtotal:        item.precio * item.cantidad,
+    }));
+
+    await supabase.from('detalle_pedidos').insert(detalles);
+
+    return pedido;
+  };
+
   const handleConfirmar = async () => {
     setLoading(true);
+    setMpError(null);
     try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      if (metodoPago === 'mercadopago') {
+        // Crear pedido con estado 'pendiente_mp' y redirigir a MP
+        const pedido = await crearPedidoEnDB('pendiente_mp');
 
-      // Crear pedido en Supabase
-      const { data: pedido, error } = await supabase
-        .from('pedidos')
-        .insert([{
-          cliente_id:        user?.id || null,
-          estado:            'pendiente',
-          forma_entrega:     entrega,
-          forma_pago:        metodoPago,
-          direccion_entrega: entrega === 'delivery' ? form.direccion : null,
-          total:             totalPrecio,
-          observaciones:     form.nota || null,
-          nombre_cliente:    `${form.nombre} ${form.apellido}`.trim() || null,
-          telefono_cliente:  form.telefono || null,
-          email_cliente:     form.email    || null,
-        }])
-        .select()
-        .single();
+        const res = await fetch('/api/crear-preferencia', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items,
+            pedidoId:   pedido.id,
+            payerEmail: form.email || null,
+          }),
+        });
 
-      if (error) throw error;
+        const json = await res.json();
+        if (!res.ok || json.error) throw new Error(json.error || 'Error MP');
 
-      // Insertar detalle del pedido
-      const detalles = items.map(item => ({
-        pedido_id:       pedido.id,
-        codigo_producto: String(item.codAb || item.id),
-        descripcion:     item.nombre,
-        cantidad:        item.cantidad,
-        precio_unitario: item.precio,
-        subtotal:        item.precio * item.cantidad,
-      }));
+        // Redirigir a Mercado Pago (abre la app o web de MP)
+        window.location.href = json.init_point;
+        return; // no llegar a setLoading(false) para evitar parpadeo
+      }
 
-      await supabase.from('detalle_pedidos').insert(detalles);
-
+      // Pago no-MP: flujo normal
+      const pedido = await crearPedidoEnDB('pendiente');
       setPedidoId(pedido.id);
       clearCart();
       setPaso(3);
     } catch (err) {
       console.error('Error al confirmar pedido:', err);
-      alert('Hubo un error al procesar tu pedido. Intentá de nuevo.');
+      if (metodoPago === 'mercadopago') {
+        setMpError('No se pudo conectar con Mercado Pago. Verificá tu conexión o elegí otro método de pago.');
+      } else {
+        alert('Hubo un error al procesar tu pedido. Intentá de nuevo.');
+      }
     }
     setLoading(false);
   };
@@ -253,16 +317,38 @@ export default function CarritoPage() {
                     <label className="block text-xs font-semibold text-gray-600 mb-1.5">Email</label>
                     <input name="email" value={form.email} onChange={handleFormChange} className="input" placeholder="tu@email.com" type="email" />
                   </div>
+
                   {entrega === 'delivery' && (
                     <div className="sm:col-span-2">
                       <label className="block text-xs font-semibold text-gray-600 mb-1.5">Dirección de entrega *</label>
                       <input name="direccion" value={form.direccion} onChange={handleFormChange} className="input" placeholder="Calle, número, piso/dpto" required />
                     </div>
                   )}
+
                   <div className="sm:col-span-2">
                     <label className="block text-xs font-semibold text-gray-600 mb-1.5">Nota para el local</label>
-                    <textarea name="nota" value={form.nota} onChange={handleFormChange} className="input resize-none" rows={2} placeholder="Ej: sin cebolla, timbre roto..." />
+                    <textarea name="nota" value={form.nota} onChange={handleFormChange} className="input resize-none" rows={2} placeholder="Ej: sin cebolla, sin tacc..." />
                   </div>
+
+                  {/* Nota para el cadete — solo en delivery */}
+                  {entrega === 'delivery' && (
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                        🛵 Indicaciones para el cadete
+                      </label>
+                      <textarea
+                        name="notaCadete"
+                        value={form.notaCadete}
+                        onChange={handleFormChange}
+                        className="input resize-none"
+                        rows={3}
+                        placeholder="Ej: timbre roto, tocar bocina / portón verde, segunda casa desde la esquina / departamento 3B, timbre 'García'"
+                      />
+                      <p className="text-xs text-gray-400 mt-1">
+                        Ayudá al cadete a encontrar tu dirección: color del portón, si el timbre funciona, referencia de la casa, etc.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -271,7 +357,7 @@ export default function CarritoPage() {
                 <h2 className="font-bold text-gray-900 text-lg mb-4">Método de pago</h2>
                 <div className="space-y-3">
                   {METODOS_PAGO.map(m => (
-                    <button key={m.id} onClick={() => setMetodoPago(m.id)}
+                    <button key={m.id} onClick={() => { setMetodoPago(m.id); setMpError(null); }}
                       className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 text-left transition-all ${metodoPago === m.id ? 'border-brand-purple-600 bg-brand-purple-50' : 'border-gray-200 hover:border-brand-purple-300'}`}>
                       <span className="text-2xl">{m.icon}</span>
                       <div className="flex-1">
@@ -287,6 +373,14 @@ export default function CarritoPage() {
                     </button>
                   ))}
                 </div>
+
+                {/* Aviso MP error */}
+                {mpError && (
+                  <div className="mt-4 flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    <span>{mpError}</span>
+                  </div>
+                )}
               </div>
             </>
           )}
@@ -326,9 +420,16 @@ export default function CarritoPage() {
               <button onClick={handleConfirmar}
                 disabled={!form.nombre || !form.telefono || loading}
                 className="btn-primary w-full justify-center disabled:opacity-50 disabled:cursor-not-allowed">
-                {loading
-                  ? <span className="flex items-center gap-2"><span className="w-4 h-4 border-2 border-brand-yellow-400 border-t-transparent rounded-full animate-spin" />Procesando...</span>
-                  : <>Confirmar pedido <CheckCircle2 className="w-4 h-4" /></>}
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 border-2 border-brand-yellow-400 border-t-transparent rounded-full animate-spin" />
+                    {metodoPago === 'mercadopago' ? 'Abriendo Mercado Pago...' : 'Procesando...'}
+                  </span>
+                ) : (
+                  metodoPago === 'mercadopago'
+                    ? <>Pagar con Mercado Pago <ArrowRight className="w-4 h-4" /></>
+                    : <>Confirmar pedido <CheckCircle2 className="w-4 h-4" /></>
+                )}
               </button>
             )}
 
