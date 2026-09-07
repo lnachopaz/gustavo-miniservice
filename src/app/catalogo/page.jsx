@@ -46,7 +46,7 @@ function CatalogoContent() {
   }, [productos, busqueda, catSeleccionada, soloOfertas, orden]);
 
   const tituloActual = soloOfertas ? '🔥 Ofertas del día'
-    : catSeleccionada ? (categorias.find(c => c.slug === catSeleccionada)?.emoji + ' ' + categorias.find(c => c.slug === catSeleccionada)?.nombre)
+    : catSeleccionada ? (categorias.find(c => c.slug === catSeleccionada)?.emoji + " " + categorias.find(c => c.slug === catSeleccionada)?.label)
     : '🛒 Todos los productos';
 
   return (
@@ -69,7 +69,7 @@ function CatalogoContent() {
             <button key={cat.id} onClick={() => { setCat(cat.slug); setSoloOfertas(false); }}
               className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all text-left w-full ${catSeleccionada === cat.slug ? 'bg-brand-purple-100 text-brand-purple-800 font-semibold border border-brand-purple-200' : 'text-gray-600 hover:bg-gray-100'}`}>
               <span className="text-base leading-none">{cat.emoji}</span>
-              <span className="truncate">{cat.nombre}</span>
+              <span className="truncate">{cat.label}</span>
             </button>
           ))}
         </aside>
@@ -120,7 +120,7 @@ function CatalogoContent() {
             {categorias.map(cat => (
               <button key={cat.id} onClick={() => { setCat(cat.slug); setSoloOfertas(false); }}
                 className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap ${catSeleccionada === cat.slug ? 'bg-brand-purple-800 text-brand-yellow-400' : 'bg-gray-100 text-gray-600'}`}>
-                {cat.emoji} {cat.nombre}
+                {cat.emoji} {cat.label}
               </button>
             ))}
           </div>

@@ -23,7 +23,7 @@ export default function CategoryGrid() {
                 {cat.emoji}
               </span>
               <span className="text-xs font-semibold text-gray-700 text-center leading-tight">
-                {cat.nombre}
+                {cat.label}
               </span>
             </Link>
           ))}
