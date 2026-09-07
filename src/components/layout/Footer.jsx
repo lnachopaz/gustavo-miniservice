@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Store, MapPin, Phone, Clock, Instagram, Facebook } from 'lucide-react';
+import { Store, MapPin, Phone, Clock } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -22,22 +22,6 @@ export default function Footer() {
             <p className="text-brand-purple-300 text-sm leading-relaxed">
               Tu miniservice de confianza. Comestibles, bebidas, rotisería, lácteos y artículos de limpieza.
             </p>
-            <div className="flex gap-3 mt-4">
-              <a
-                href="#"
-                className="bg-brand-purple-700 hover:bg-brand-purple-600 p-2 rounded-lg transition-colors"
-                aria-label="Instagram"
-              >
-                <Instagram className="w-4 h-4 text-brand-yellow-400" />
-              </a>
-              <a
-                href="#"
-                className="bg-brand-purple-700 hover:bg-brand-purple-600 p-2 rounded-lg transition-colors"
-                aria-label="Facebook"
-              >
-                <Facebook className="w-4 h-4 text-brand-yellow-400" />
-              </a>
-            </div>
           </div>
 
           {/* Links */}
