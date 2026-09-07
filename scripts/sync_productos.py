@@ -20,8 +20,10 @@ página web muestra solo un subconjunto curado, el de `publicado = true`.
 Requiere la migración scripts/migracion_publicado.sql aplicada.
 
 Uso:
-    python sync_productos.py                         # busca el JSON más reciente en CARPETA_JSON
-    python sync_productos.py productos-xxx.json      # usa ese archivo específico
+    python sync_productos.py                          # busca el JSON más reciente en CARPETA_JSON
+    python sync_productos.py productos-xxx.json       # usa ese archivo específico
+    python sync_productos.py productos-xxx.json --dry # simula, no escribe nada
+    python sync_productos.py ... --forzar-bajas       # permite despublicar más de LIMITE_BAJAS
 
 Instalación (una sola vez):
     pip install requests
@@ -62,6 +64,11 @@ CARPETA_JSON = r"C:\Users\lnach\Documents"
 
 # Patrón del nombre de archivo del JSON exportado
 PATRON_JSON = "productos-*.json"
+
+# Freno para exports viejos o incompletos. Un JSON desactualizado no contiene
+# los productos dados de alta después de generarlo, y sin este límite la
+# despublicación de bajas los sacaría de la web en silencio.
+LIMITE_BAJAS = 25
 
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -206,10 +213,10 @@ def mapear(p: dict) -> dict:
 #  Sincronización principal
 # ─────────────────────────────────────────────────────────────────────────────
 
-def sincronizar(json_path: str):
+def sincronizar(json_path: str, dry: bool = False, forzar_bajas: bool = False):
     t0 = time.time()
     log.info("=" * 60)
-    log.info(f"Inicio sincronización: {json_path}")
+    log.info(f"Inicio sincronización: {json_path}" + ("  [SIMULACIÓN]" if dry else ""))
 
     # 1. Leer JSON
     productos_raw = leer_json(json_path)
@@ -262,17 +269,37 @@ def sincronizar(json_path: str):
     log.info(f"Productos a actualizar: {len(a_actualizar):,}")
     log.info(f"Bajas a despublicar:    {len(a_despublicar):,}")
 
-    # 4. Insertar nuevos
+    # 4. Freno: un JSON viejo no trae los productos dados de alta después de
+    #    generarlo, y esos aparecen acá como bajas sin serlo.
+    if len(a_despublicar) > LIMITE_BAJAS and not forzar_bajas:
+        log.error(
+            f"⛔  {len(a_despublicar):,} productos publicados no aparecen en el JSON "
+            f"(el límite es {LIMITE_BAJAS}). Casi siempre significa que el export "
+            f"está desactualizado. Revisá con --dry y, si las bajas son reales, "
+            f"volvé a correr con --forzar-bajas."
+        )
+        sys.exit(1)
+
+    if dry:
+        log.info("Simulación: no se escribió nada en Supabase.")
+        if a_despublicar:
+            ids = [str(p["id"]) for p in a_despublicar]
+            log.info("Se despublicarían los id: " + ", ".join(ids[:50])
+                     + (" ..." if len(ids) > 50 else ""))
+        log.info("")
+        return
+
+    # 5. Insertar nuevos
     if nuevos:
         n = sb_insert_batch("productos", nuevos)
         log.info(f"  ✅ Insertados: {n:,}")
 
-    # 5. Actualizar existentes (solo precio/stock/activo)
+    # 6. Actualizar existentes (solo precio/stock/activo)
     if a_actualizar:
         n = sb_upsert_batch("productos", a_actualizar)
         log.info(f"  ✅ Actualizados: {n:,}")
 
-    # 6. Despublicar las bajas
+    # 7. Despublicar las bajas
     if a_despublicar:
         n = sb_upsert_batch("productos", a_despublicar)
         log.info(f"  ✅ Despublicados: {n:,}")
@@ -297,15 +324,23 @@ if __name__ == "__main__":
         log.error("⛔  Falta la variable de entorno SUPABASE_SERVICE_KEY (service_role).")
         sys.exit(1)
 
-    # Ruta del JSON
-    if len(sys.argv) > 1:
-        ruta = sys.argv[1]
-    else:
-        ruta = encontrar_json_reciente()
+    # Tiene que ser la service_role, no la anon/publishable: la anon solo ve los
+    # productos publicados, así que el script tomaría a los no publicados como
+    # nuevos e insertaría duplicados.
+    if SUPABASE_SERVICE_KEY.startswith("sb_publishable_"):
+        log.error("⛔  Esa es la clave pública (anon). Hace falta la service_role: Supabase → Settings → API.")
+        sys.exit(1)
+
+    dry          = "--dry" in sys.argv
+    forzar_bajas = "--forzar-bajas" in sys.argv
+
+    # Ruta del JSON: el primer argumento que no sea una opción.
+    posicionales = [a for a in sys.argv[1:] if not a.startswith("-")]
+    ruta = posicionales[0] if posicionales else encontrar_json_reciente()
 
     if not ruta or not os.path.exists(ruta):
         log.error(f"No se encontró ningún JSON en: {CARPETA_JSON}\\{PATRON_JSON}")
         log.error("Pasá el archivo como argumento: python sync_productos.py ruta\\productos.json")
         sys.exit(1)
 
-    sincronizar(ruta)
+    sincronizar(ruta, dry=dry, forzar_bajas=forzar_bajas)
