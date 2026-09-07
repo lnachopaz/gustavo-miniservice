@@ -12,7 +12,7 @@ export async function getProductosServer() {
 
     const filas = [];
     const base = `${url}/rest/v1/productos?select=${COLUMNAS.join(',')}`
-               + `&activo=eq.true&precio=gt.0&order=descripcion,id&limit=${PAGINA}`;
+               + `&publicado=eq.true&precio=gt.0&order=descripcion,id&limit=${PAGINA}`;
 
     for (let pagina = 0; pagina < MAX_PAGINAS; pagina++) {
       const res = await fetch(`${base}&offset=${pagina * PAGINA}`, {

@@ -16,7 +16,9 @@ export async function getProductos() {
       const { data, error } = await supabase
         .from('productos')
         .select(COLUMNAS.join(','))
-        .eq('activo', true)
+        // `publicado` es lo que decide qué se ve en la web y el import no lo
+        // toca; `precio > 0` esconde lo que quedó sin precio en el miniservice.
+        .eq('publicado', true)
         .gt('precio', 0)
         .order('descripcion')
         .order('id')
