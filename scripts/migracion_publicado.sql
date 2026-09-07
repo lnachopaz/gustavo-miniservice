@@ -21,22 +21,24 @@ alter table public.productos
 alter table public.productos
   add column if not exists carga_manual boolean not null default false;
 
--- 2. Backfill de los 2325 que hoy están en la página.
---    El guard aborta si la tabla ya no tiene exactamente esas filas: una vez
---    que entraron los ~6000 del import ya no hay forma de distinguir cuáles
---    eran los originales, y publicarlos todos sería peor que no hacer nada.
+-- 2. Backfill: se publica todo lo que hoy está en la tabla (los ~2325 del
+--    catálogo actual, más lo que hayas agregado a mano desde entonces).
+--    El guard aborta si la tabla ya creció al orden del import completo: con
+--    los ~6000 adentro ya no hay forma de distinguir el subconjunto original,
+--    y publicarlos a todos sería peor que no hacer nada.
 do $$
 declare
   filas int;
 begin
   select count(*) into filas from public.productos;
 
-  if filas <> 2325 then
+  if filas > 3000 then
     raise exception
-      'La tabla tiene % filas y se esperaban 2325. Si el import ya corrió, no se puede identificar el subconjunto original: parar y revisar a mano.', filas;
+      'La tabla tiene % filas: el import grande ya corrió y no se puede identificar el subconjunto que estaba publicado. Parar y revisar a mano.', filas;
   end if;
 
   update public.productos set publicado = true;
+  raise notice 'Publicados % productos.', filas;
 end $$;
 
 -- 3. Índices: el filtro de la web y el buscador del alta pegan contra estas
