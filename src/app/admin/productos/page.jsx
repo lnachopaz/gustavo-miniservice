@@ -8,7 +8,7 @@ import { formatPrecio } from '@/lib/productos';
 
 const EMPTY = {
   codigo: '', descripcion: '', descripcion_web: '', precio: '', precio_anterior: '',
-  categoria: 'Panadería', stock: '', unidad: 'unidad',
+  categoria: 'Almacén General', stock: '', unidad: 'unidad',
   oferta: false, destacado: false, activo: true, foto_url: '', cod_barra: '',
 };
 
@@ -24,10 +24,25 @@ export default function AdminProductos() {
   const fileRef = useRef();
   const supabase = createClient();
 
+  // PostgREST devuelve como máximo 1000 filas por request: hay que paginar o
+  // el panel muestra solo una parte del catálogo.
   const cargar = async () => {
-    const { data } = await supabase
-      .from('productos').select('*').order('categoria').order('descripcion');
-    setProductos(data || []);
+    const PAGINA = 1000;
+    const filas = [];
+
+    for (let pagina = 0; pagina < 20; pagina++) {
+      const desde = pagina * PAGINA;
+      const { data, error } = await supabase
+        .from('productos').select('*')
+        .order('categoria').order('descripcion').order('id')
+        .range(desde, desde + PAGINA - 1);
+
+      if (error) break;
+      filas.push(...(data || []));
+      if (!data || data.length < PAGINA) break;
+    }
+
+    setProductos(filas);
     setLoading(false);
   };
 

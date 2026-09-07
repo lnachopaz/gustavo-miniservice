@@ -35,7 +35,7 @@ export default async function HomePage() {
               <Link key={cat.id} href={`/catalogo?cat=${cat.slug}`}
                 className="group flex flex-col items-center gap-2 p-3 bg-white rounded-2xl border border-gray-100 hover:border-brand-purple-300 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
                 <span className="text-3xl group-hover:scale-110 transition-transform duration-200">{cat.emoji}</span>
-                <span className="text-xs font-semibold text-gray-700 text-center leading-tight">{cat.nombre}</span>
+                <span className="text-xs font-semibold text-gray-700 text-center leading-tight">{cat.label}</span>
               </Link>
             ))}
           </div>

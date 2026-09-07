@@ -3,14 +3,24 @@
 // Precios actualizados al 22/05/2026 (ARS)
 // ──────────────────────────────────────────────────────────────────
 
+// Categorías reales del miniservice: `nombre` es el valor exacto que guarda
+// productos.categoria en Supabase — se usa para filtrar el catálogo y para grabar
+// desde el panel admin, así que no se toca. `label` es lo que ve el cliente.
 export const categorias = [
-  { id: 1, nombre: 'Panadería',         slug: 'panaderia',       emoji: '🍞' },
-  { id: 2, nombre: 'Comestibles',       slug: 'comestibles',     emoji: '🛒' },
-  { id: 3, nombre: 'Lácteos',           slug: 'lacteos',         emoji: '🧀' },
-  { id: 4, nombre: 'Bebidas',           slug: 'bebidas',         emoji: '🥤' },
-  { id: 5, nombre: 'Art. de Limpieza',  slug: 'limpieza',        emoji: '🧹' },
-  { id: 6, nombre: 'Rotisería',         slug: 'rotiseria',       emoji: '🍗' },
-  { id: 9, nombre: 'Congelados',        slug: 'congelados',      emoji: '🧊' },
+  { id: 1,  nombre: 'Panificados',          label: 'Panificados',     slug: 'panificados',       emoji: '🍞' },
+  { id: 2,  nombre: 'Almacén General',      label: 'Almacén',         slug: 'almacen',           emoji: '🛒' },
+  { id: 3,  nombre: 'Fideos y Pastas',      label: 'Fideos y Pastas', slug: 'fideos-y-pastas',   emoji: '🍝' },
+  { id: 4,  nombre: 'Arroz',                label: 'Arroz',           slug: 'arroz',             emoji: '🍚' },
+  { id: 5,  nombre: 'Conservas',            label: 'Conservas',       slug: 'conservas',         emoji: '🥫' },
+  { id: 6,  nombre: 'Salsas y Tomates',     label: 'Salsas',          slug: 'salsas-y-tomates',  emoji: '🍅' },
+  { id: 7,  nombre: 'Dulces y Mieles',      label: 'Dulces y Mieles', slug: 'dulces-y-mieles',   emoji: '🍯' },
+  { id: 8,  nombre: 'Lácteos',              label: 'Lácteos',         slug: 'lacteos',           emoji: '🥛' },
+  { id: 9,  nombre: 'Quesos',               label: 'Quesos',          slug: 'quesos',            emoji: '🧀' },
+  { id: 10, nombre: 'Fiambres y Frescos',   label: 'Fiambres',        slug: 'fiambres-y-frescos',emoji: '🥓' },
+  { id: 11, nombre: 'Hambur. y Congelados', label: 'Congelados',      slug: 'congelados',        emoji: '🧊' },
+  { id: 12, nombre: 'Bebidas',              label: 'Bebidas',         slug: 'bebidas',           emoji: '🥤' },
+  { id: 13, nombre: 'Limpieza del Hogar',   label: 'Limpieza',        slug: 'limpieza',          emoji: '🧹' },
+  { id: 14, nombre: 'Higiene Personal',     label: 'Higiene Personal',slug: 'higiene-personal',  emoji: '🧴' },
 ];
 
 export const productos = [
