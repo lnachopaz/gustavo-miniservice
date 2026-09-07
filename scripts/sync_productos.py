@@ -24,6 +24,9 @@ Uso:
     python sync_productos.py productos-xxx.json       # usa ese archivo específico
     python sync_productos.py productos-xxx.json --dry # simula, no escribe nada
     python sync_productos.py ... --forzar-bajas       # permite despublicar más de LIMITE_BAJAS
+    python sync_productos.py ... --sin-chequeo-fecha  # acepta un export viejo
+
+Sale con código != 0 si algo falló, para que el Programador de Tareas lo detecte.
 
 Instalación (una sola vez):
     pip install requests
@@ -70,6 +73,12 @@ PATRON_JSON = "productos-*.json"
 # despublicación de bajas los sacaría de la web en silencio.
 LIMITE_BAJAS = 25
 
+# Antigüedad máxima del export, en horas. Si el miniservice no generó el archivo
+# (PC apagada, export fallido), encontrar_json_reciente() devolvería el de ayer
+# o uno de hace meses, y se resincronizarían precios viejos como si fueran de
+# hoy. En una corrida desatendida eso pasa sin que nadie se entere.
+MAX_ANTIGUEDAD_HORAS = 20
+
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -90,6 +99,12 @@ log = logging.getLogger()
 # ─────────────────────────────────────────────────────────────────────────────
 #  Helpers HTTP (Supabase REST API directa, sin SDK extra)
 # ─────────────────────────────────────────────────────────────────────────────
+
+# Lotes que Supabase rechazó. Se revisa al final para salir con código != 0:
+# el .bat y el Programador de Tareas necesitan ese código para saber que algo
+# falló, y un warning en el log no alcanza porque nadie lo mira a diario.
+LOTES_FALLIDOS = []
+
 
 def headers_base():
     return {
@@ -130,6 +145,7 @@ def sb_insert_batch(tabla: str, registros: list, batch_size=500) -> int:
         r    = requests.post(url, headers=h, json=lote, timeout=60)
         if not r.ok:
             log.warning(f"  ⚠  Error insertando lote {i//batch_size+1}: {r.status_code} {r.text[:200]}")
+            LOTES_FALLIDOS.append(("insert", i//batch_size+1, r.status_code))
         else:
             total += len(lote)
 
@@ -150,6 +166,7 @@ def sb_upsert_batch(tabla: str, registros: list, batch_size=500) -> int:
         r    = requests.post(url, headers=h, json=lote, timeout=60)
         if not r.ok:
             log.warning(f"  ⚠  Error actualizando lote {i//batch_size+1}: {r.status_code} {r.text[:200]}")
+            LOTES_FALLIDOS.append(("update", i//batch_size+1, r.status_code))
         else:
             total += len(lote)
 
@@ -305,11 +322,38 @@ def sincronizar(json_path: str, dry: bool = False, forzar_bajas: bool = False):
         log.info(f"  ✅ Despublicados: {n:,}")
 
     elapsed = time.time() - t0
+
+    if LOTES_FALLIDOS:
+        log.error(f"⛔  {len(LOTES_FALLIDOS)} lotes fallaron; los datos quedaron incompletos.")
+        for tipo, nro, code in LOTES_FALLIDOS[:10]:
+            log.error(f"     {tipo} lote {nro}: HTTP {code}")
+        log.info("")
+        sys.exit(1)
+
     log.info(f"Sincronización completada en {elapsed:.1f}s ✓")
     log.info("")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+
+def antiguedad_horas(path: str) -> float:
+    """
+    Horas desde que el miniservice generó el export.
+
+    Se saca del nombre (productos-AAAAMMDDHHMMSS.json) y no de la fecha del
+    archivo: copiar o mover un archivo actualiza su mtime, así que un export de
+    hace tres meses puede figurar como recién creado. Si el nombre no tiene el
+    formato esperado, se cae al mtime como aproximación.
+    """
+    m = re.search(r"(\d{14})", os.path.basename(path))
+    if m:
+        try:
+            generado = datetime.strptime(m.group(1), "%Y%m%d%H%M%S")
+            return (datetime.now() - generado).total_seconds() / 3600
+        except ValueError:
+            pass
+    return (time.time() - os.path.getmtime(path)) / 3600
+
 
 def encontrar_json_reciente() -> str | None:
     archivos = glob.glob(os.path.join(CARPETA_JSON, PATRON_JSON))
@@ -331,8 +375,9 @@ if __name__ == "__main__":
         log.error("⛔  Esa es la clave pública (anon). Hace falta la service_role: Supabase → Settings → API.")
         sys.exit(1)
 
-    dry          = "--dry" in sys.argv
-    forzar_bajas = "--forzar-bajas" in sys.argv
+    dry               = "--dry" in sys.argv
+    forzar_bajas      = "--forzar-bajas" in sys.argv
+    sin_chequeo_fecha = "--sin-chequeo-fecha" in sys.argv
 
     # Ruta del JSON: el primer argumento que no sea una opción.
     posicionales = [a for a in sys.argv[1:] if not a.startswith("-")]
@@ -341,6 +386,18 @@ if __name__ == "__main__":
     if not ruta or not os.path.exists(ruta):
         log.error(f"No se encontró ningún JSON en: {CARPETA_JSON}\\{PATRON_JSON}")
         log.error("Pasá el archivo como argumento: python sync_productos.py ruta\\productos.json")
+        sys.exit(1)
+
+    # El export tiene que ser de hoy. Si el miniservice no lo generó, el archivo
+    # más reciente de la carpeta es viejo y sincronizarlo revierte los precios.
+    horas = antiguedad_horas(ruta)
+    if horas > MAX_ANTIGUEDAD_HORAS and not sin_chequeo_fecha:
+        log.error(
+            f"⛔  El export tiene {horas:.0f} horas de antigüedad (el máximo es "
+            f"{MAX_ANTIGUEDAD_HORAS}): {os.path.basename(ruta)}"
+        )
+        log.error("     Revisá que el miniservice haya generado el archivo de hoy.")
+        log.error("     Para sincronizar igual: --sin-chequeo-fecha")
         sys.exit(1)
 
     sincronizar(ruta, dry=dry, forzar_bajas=forzar_bajas)
