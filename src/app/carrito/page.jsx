@@ -10,11 +10,10 @@ import { useCart } from '@/context/CartContext';
 import { formatPrecio } from '@/lib/productos';
 import { createClient } from '@/lib/supabase/client';
 
-// Solo 3 métodos de pago
+// Únicos dos métodos de pago: Mercado Pago (online) o efectivo (al recibir/retirar)
 const METODOS_PAGO = [
-  { id: 'mercadopago',   label: 'Mercado Pago',          icon: '💳', desc: 'Tarjetas, QR, billetera virtual — pagás en la app de MP', badge: 'Recomendado' },
-  { id: 'transferencia', label: 'Transferencia bancaria', icon: '📲', desc: 'CVU / Alias / CBU — enviá el comprobante por WhatsApp',   badge: null },
-  { id: 'efectivo',      label: 'Efectivo',               icon: '💵', desc: 'Al retirar en el local o al recibir el pedido',           badge: null },
+  { id: 'mercadopago', label: 'Mercado Pago', icon: '💳', desc: 'Pagás online desde tu cuenta de MP, con tarjeta o QR. Se acredita al instante.', badge: 'Recomendado' },
+  { id: 'efectivo',    label: 'Efectivo',     icon: '💵', desc: 'Pagás al retirar en el local o cuando te llega el pedido.',                      badge: null },
 ];
 
 const METODOS_ENTREGA = [
@@ -30,6 +29,8 @@ export default function CarritoPage() {
   const [loading, setLoading]       = useState(false);
   const [pedidoId, setPedidoId]     = useState(null);
   const [mpError, setMpError]       = useState(null);
+  const [pagoEstado, setPagoEstado]         = useState(null);  // aprobado | pendiente | rechazado
+  const [verificandoPago, setVerificando]   = useState(false);
   const [form, setForm] = useState({
     nombre: '', apellido: '', telefono: '', email: '',
     direccion: '', nota: '', notaCadete: '',
@@ -37,25 +38,53 @@ export default function CarritoPage() {
 
   // Detectar retorno desde Mercado Pago
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const mpStatus  = params.get('mp_status');
-    const pedidoParam = params.get('pedido');
+    const params      = new URLSearchParams(window.location.search);
+    const mpStatus    = params.get('mp_status');
+    if (!mpStatus) return;
 
-    if (mpStatus === 'approved' && pedidoParam) {
-      clearCart();
-      setPedidoId(pedidoParam);
-      setMetodoPago('mercadopago');
-      setPaso(3);
-      window.history.replaceState({}, '', '/carrito');
-    } else if (mpStatus === 'failure') {
-      setMpError('El pago con Mercado Pago no fue aprobado. Podés intentar de nuevo o elegir otro método.');
-      window.history.replaceState({}, '', '/carrito');
-    } else if (mpStatus === 'pending' && pedidoParam) {
-      clearCart();
-      setPedidoId(pedidoParam);
-      setMetodoPago('mercadopago');
-      setPaso(3);
-      window.history.replaceState({}, '', '/carrito');
+    const pedidoParam = params.get('pedido') || params.get('external_reference');
+    // MP agrega payment_id (o collection_id) al volver al sitio
+    const paymentId   = params.get('payment_id') || params.get('collection_id');
+
+    window.history.replaceState({}, '', '/carrito');
+    setMetodoPago('mercadopago');
+
+    if (mpStatus === 'failure') {
+      setPagoEstado('rechazado');
+      setMpError('El pago con Mercado Pago no fue aprobado. Podés intentar de nuevo o pagar en efectivo.');
+      // Volvemos al paso de datos y pago: ahí es donde se ve el aviso y puede reintentar.
+      cargarDatosUsuario();
+      setPaso(2);
+      // El pedido quedó esperando un pago que nunca llegó: lo damos de baja para
+      // que el reintento no deje pedidos fantasma en el panel.
+      if (pedidoParam) {
+        fetch('/api/cancelar-pedido', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ pedidoId: pedidoParam }),
+        }).catch(err => console.error('Error al cancelar el pedido sin pagar:', err));
+      }
+      return;
+    }
+
+    clearCart();
+    setPedidoId(pedidoParam);
+    setPagoEstado(mpStatus === 'approved' ? 'aprobado' : 'pendiente');
+    setPaso(3);
+
+    // La URL no es confiable: verificamos el pago contra la API de MP y ahí
+    // recién se confirma el pedido en la base.
+    if (paymentId && paymentId !== 'null') {
+      setVerificando(true);
+      fetch('/api/confirmar-pago', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ pedidoId: pedidoParam, paymentId }),
+      })
+        .then(res => res.json())
+        .then(json => { if (json.estadoPago) setPagoEstado(json.estadoPago); })
+        .catch(err => console.error('Error al verificar el pago:', err))
+        .finally(() => setVerificando(false));
     }
   }, []);
 
@@ -160,7 +189,7 @@ export default function CarritoPage() {
     } catch (err) {
       console.error('Error al confirmar pedido:', err);
       if (metodoPago === 'mercadopago') {
-        setMpError('No se pudo conectar con Mercado Pago. Verificá tu conexión o elegí otro método de pago.');
+        setMpError('No se pudo conectar con Mercado Pago. Verificá tu conexión o elegí pagar en efectivo.');
       } else {
         alert('Hubo un error al procesar tu pedido. Intentá de nuevo.');
       }
@@ -176,7 +205,9 @@ export default function CarritoPage() {
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 className="w-10 h-10 text-green-600" />
           </div>
-          <h1 className="text-2xl font-black text-gray-900 mb-2">¡Pedido confirmado!</h1>
+          <h1 className="text-2xl font-black text-gray-900 mb-2">
+            {pagoEstado === 'pendiente' ? '¡Pedido recibido!' : '¡Pedido confirmado!'}
+          </h1>
           {pedidoId && (
             <p className="text-brand-purple-700 font-bold text-sm mb-2">
               Pedido #{String(pedidoId).padStart(6, '0')}
@@ -188,6 +219,32 @@ export default function CarritoPage() {
               ? '📍 Podés pasar a retirar cuando esté listo. Te avisamos por WhatsApp.'
               : '🚴 Nuestro cadete se comunicará con vos para coordinar la entrega.'}
           </p>
+          {/* Estado del pago con Mercado Pago */}
+          {metodoPago === 'mercadopago' && (
+            verificandoPago ? (
+              <div className="flex items-center justify-center gap-2 bg-gray-50 border border-gray-200 rounded-2xl p-3 mb-4 text-sm text-gray-500">
+                <span className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
+                Verificando el pago con Mercado Pago...
+              </div>
+            ) : pagoEstado === 'aprobado' ? (
+              <div className="flex items-center justify-center gap-2 bg-green-50 border border-green-200 rounded-2xl p-3 mb-4 text-sm font-semibold text-green-700">
+                <CheckCircle2 className="w-4 h-4" />
+                Pago acreditado con Mercado Pago
+              </div>
+            ) : pagoEstado === 'pendiente' ? (
+              <div className="flex items-start gap-2 bg-yellow-50 border border-yellow-200 rounded-2xl p-3 mb-4 text-sm text-yellow-800 text-left">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>Mercado Pago todavía está procesando el pago. Cuando se acredite, el pedido pasa a preparación automáticamente.</span>
+              </div>
+            ) : null
+          )}
+
+          {metodoPago === 'efectivo' && (
+            <div className="flex items-center justify-center gap-2 bg-yellow-50 border border-yellow-200 rounded-2xl p-3 mb-4 text-sm font-semibold text-yellow-800">
+              💵 Pagás en efectivo {entrega === 'retiro' ? 'al retirar' : 'al recibir el pedido'}
+            </div>
+          )}
+
           <div className="bg-brand-purple-50 rounded-2xl p-4 text-left mb-8 space-y-1 text-sm text-gray-600">
             <p>💳 Pago: <strong>{METODOS_PAGO.find(m => m.id === metodoPago)?.label}</strong></p>
             <p>📦 Entrega: <strong>{METODOS_ENTREGA.find(m => m.id === entrega)?.label}</strong></p>

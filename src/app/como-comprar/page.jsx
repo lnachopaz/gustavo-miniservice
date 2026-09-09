@@ -27,7 +27,7 @@ const pasos = [
     numero: '04',
     icon: CreditCard,
     titulo: 'Elegí cómo pagar',
-    desc: 'Mercado Pago, tarjeta de débito/crédito, transferencia bancaria o efectivo al retirar/recibir.',
+    desc: 'Mercado Pago (pagás online y el pedido se confirma solo) o efectivo al retirar o recibir.',
     color: 'bg-yellow-100 text-yellow-700',
   },
   {

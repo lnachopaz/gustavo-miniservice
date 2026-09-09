@@ -2,11 +2,19 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ShoppingBag, ArrowLeft, Package, Clock, CheckCircle2, Truck, XCircle, AlertTriangle } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, Package, Clock, CheckCircle2, Truck, XCircle, AlertTriangle, CreditCard } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { formatPrecio } from '@/lib/productos';
 
+const PAGO_LABELS = {
+  mercadopago:   'Mercado Pago',
+  efectivo:      'Efectivo',
+  tarjeta:       'Tarjeta',
+  transferencia: 'Transferencia',
+};
+
 const ESTADO_CONFIG = {
+  pendiente_mp: { label: 'Esperando pago', icon: CreditCard, color: 'text-orange-600 bg-orange-50 border-orange-200' },
   pendiente:  { label: 'Pendiente',  icon: Clock,        color: 'text-yellow-600 bg-yellow-50 border-yellow-200' },
   confirmado: { label: 'Confirmado', icon: CheckCircle2, color: 'text-blue-600 bg-blue-50 border-blue-200' },
   en_camino:  { label: 'En camino',  icon: Truck,        color: 'text-purple-600 bg-purple-50 border-purple-200' },
@@ -87,7 +95,7 @@ export default function HistorialPage() {
             const cfg = ESTADO_CONFIG[pedido.estado] || ESTADO_CONFIG.pendiente;
             const Icon = cfg.icon;
             const isOpen = expandido === pedido.id;
-            const puedeCancel = pedido.estado === 'pendiente';
+            const puedeCancel = pedido.estado === 'pendiente' || pedido.estado === 'pendiente_mp';
 
             return (
               <div key={pedido.id} className="card overflow-hidden">
@@ -125,7 +133,7 @@ export default function HistorialPage() {
                     {/* Info del pedido */}
                     <div className="bg-gray-50 rounded-xl p-3 text-xs text-gray-600 space-y-1 mb-4">
                       <p><strong>Entrega:</strong> {pedido.forma_entrega === 'retiro' ? 'Retiro en local' : 'Delivery'}</p>
-                      <p><strong>Pago:</strong> {pedido.forma_pago}</p>
+                      <p><strong>Pago:</strong> {PAGO_LABELS[pedido.forma_pago] || pedido.forma_pago}</p>
                       {pedido.direccion_entrega && <p><strong>Dirección:</strong> {pedido.direccion_entrega}</p>}
                       {pedido.observaciones && <p><strong>Nota:</strong> {pedido.observaciones}</p>}
                     </div>

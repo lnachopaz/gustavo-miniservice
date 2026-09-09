@@ -3,14 +3,16 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft, Search, Clock, CheckCircle2, Truck, Package,
-  XCircle, ChevronDown, ChevronUp, RefreshCw, Trash2, Edit3, Save, X
+  XCircle, ChevronDown, ChevronUp, RefreshCw, Trash2, Edit3, Save, X, CreditCard
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { formatPrecio } from '@/lib/productos';
 
-const ESTADOS = ['todos', 'pendiente', 'confirmado', 'en_camino', 'entregado', 'cancelado'];
+const ESTADOS = ['todos', 'pendiente_mp', 'pendiente', 'confirmado', 'en_camino', 'entregado', 'cancelado'];
 
 const ESTADO_CFG = {
+  // Pedido de Mercado Pago que todavía no se acreditó (lo confirma solo el webhook / la vuelta al sitio)
+  pendiente_mp: { label: 'Esperando pago', icon: CreditCard,   color: 'bg-orange-100 text-orange-700 border-orange-200' },
   pendiente:  { label: 'Pendiente',  icon: Clock,         color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
   confirmado: { label: 'Confirmado', icon: CheckCircle2,  color: 'bg-blue-100 text-blue-700 border-blue-200' },
   en_camino:  { label: 'En camino',  icon: Truck,         color: 'bg-purple-100 text-purple-700 border-purple-200' },
@@ -18,7 +20,19 @@ const ESTADO_CFG = {
   cancelado:  { label: 'Cancelado',  icon: XCircle,       color: 'bg-red-100 text-red-700 border-red-200' },
 };
 
+// Métodos de pago vigentes. Las claves viejas (tarjeta, transferencia) se siguen
+// mostrando bien en pedidos históricos gracias al fallback de PAGO_LABELS.
+const PAGOS = ['mercadopago', 'efectivo'];
+
+const PAGO_LABELS = {
+  mercadopago:   'Mercado Pago',
+  efectivo:      'Efectivo',
+  tarjeta:       'Tarjeta (histórico)',
+  transferencia: 'Transferencia (histórico)',
+};
+
 const SIGUIENTE_ESTADO = {
+  pendiente_mp: 'confirmado',
   pendiente:  'confirmado',
   confirmado: 'en_camino',
   en_camino:  'entregado',
@@ -233,7 +247,7 @@ export default function AdminPedidos() {
                         {new Date(pedido.creado_en).toLocaleDateString('es-AR', {
                           day: 'numeric', month: 'short', year: 'numeric',
                           hour: '2-digit', minute: '2-digit'
-                        })} · {pedido.forma_entrega === 'retiro' ? '🏪 Retiro' : '🚚 Delivery'} · {pedido.forma_pago}
+                        })} · {pedido.forma_entrega === 'retiro' ? '🏪 Retiro' : '🚚 Delivery'} · {PAGO_LABELS[pedido.forma_pago] || pedido.forma_pago}
                       </p>
                     </div>
 
@@ -345,8 +359,12 @@ export default function AdminPedidos() {
                               <select value={editForm.forma_pago}
                                 onChange={e => setEditForm(f => ({ ...f, forma_pago: e.target.value }))}
                                 className="input text-sm py-1.5">
-                                {['mercadopago','tarjeta','transferencia','efectivo'].map(p => (
-                                  <option key={p} value={p}>{p}</option>
+                                {/* si el pedido es viejo y tiene un método discontinuado, lo dejamos visible */}
+                                {(PAGOS.includes(editForm.forma_pago) || !editForm.forma_pago
+                                  ? PAGOS
+                                  : [...PAGOS, editForm.forma_pago]
+                                ).map(p => (
+                                  <option key={p} value={p}>{PAGO_LABELS[p] || p}</option>
                                 ))}
                               </select>
                             </div>
@@ -390,7 +408,7 @@ export default function AdminPedidos() {
                         /* Vista info normal */
                         <div className="bg-gray-50 rounded-xl p-3 text-xs text-gray-600 space-y-1">
                           <p><strong>Entrega:</strong> {pedido.forma_entrega === 'retiro' ? 'Retiro en local' : 'Delivery'}</p>
-                          <p><strong>Pago:</strong> {pedido.forma_pago}</p>
+                          <p><strong>Pago:</strong> {PAGO_LABELS[pedido.forma_pago] || pedido.forma_pago}</p>
                           {pedido.direccion_entrega && <p><strong>Dirección:</strong> {pedido.direccion_entrega}</p>}
                           {pedido.observaciones && <p><strong>Nota:</strong> {pedido.observaciones}</p>}
                         </div>

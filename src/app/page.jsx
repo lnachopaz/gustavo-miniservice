@@ -15,7 +15,7 @@ export default async function HomePage() {
   const beneficios = [
     { icon: <Truck className="w-7 h-7" />,    titulo: 'Envío a domicilio',  desc: 'Llegamos a tu puerta el mismo día en zonas cercanas.' },
     { icon: <Store className="w-7 h-7" />,    titulo: 'Retiro en local',    desc: 'Hacé tu pedido y retiralo sin esperas.' },
-    { icon: <CreditCard className="w-7 h-7" />, titulo: 'Múltiples pagos', desc: 'Mercado Pago, tarjetas, transferencia o efectivo.' },
+    { icon: <CreditCard className="w-7 h-7" />, titulo: 'Pagá como quieras', desc: 'Mercado Pago online o efectivo al recibir tu pedido.' },
     { icon: <Shield className="w-7 h-7" />,   titulo: 'Compra segura',      desc: 'Garantizamos la calidad de todos nuestros productos.' },
   ];
 
