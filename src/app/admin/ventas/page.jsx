@@ -37,12 +37,16 @@ const CAT_COLORS = {
   'Comestibles': '#8b5cf6',
 };
 
+// Sólo se cobra con Mercado Pago o efectivo; las otras claves quedan para pedidos viejos.
 const PAGO_LABELS = {
   mercadopago:   'Mercado Pago',
+  efectivo:      'Efectivo',
   tarjeta:       'Tarjeta',
   transferencia: 'Transferencia',
-  efectivo:      'Efectivo',
 };
+
+// Estados que no cuentan como venta: cancelados y los que esperan que MP acredite.
+const ESTADOS_EXCLUIDOS = ['cancelado', 'pendiente_mp'];
 
 /* ─── mini componentes ────────────────────────────────────────── */
 function DeltaBadge({ pct }) {
@@ -92,9 +96,10 @@ export default function AdminVentas() {
 
       const [{ data: peds }, { data: pedsAnt }, { data: dets }] = await Promise.all([
         supabase.from('pedidos').select('id, total, estado, creado_en, forma_pago, forma_entrega')
-          .neq('estado', 'cancelado').gte('creado_en', desde.toISOString()),
+          .not('estado', 'in', `(${ESTADOS_EXCLUIDOS.join(',')})`)
+          .gte('creado_en', desde.toISOString()),
         supabase.from('pedidos').select('total, estado')
-          .neq('estado', 'cancelado')
+          .not('estado', 'in', `(${ESTADOS_EXCLUIDOS.join(',')})`)
           .gte('creado_en', desdeAnt.toISOString())
           .lt('creado_en', desde.toISOString()),
         supabase.from('detalle_pedidos').select('descripcion, cantidad, precio_unitario, subtotal, pedido_id'),
@@ -571,9 +576,9 @@ export default function AdminVentas() {
                 const pctTotal = totalIngresos > 0 ? Math.round((val / totalIngresos) * 100) : 0;
                 const PAGO_COLORS = {
                   mercadopago:   '#009ee3',
-                  tarjeta:       '#6d28d9',
-                  transferencia: '#f59e0b',
                   efectivo:      '#22c55e',
+                  tarjeta:       '#6d28d9',   // pedidos viejos
+                  transferencia: '#f59e0b',   // pedidos viejos
                 };
                 return (
                   <div key={pago}>

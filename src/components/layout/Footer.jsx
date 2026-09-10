@@ -102,7 +102,6 @@ export default function Footer() {
             <div className="flex items-center gap-3 text-brand-purple-300">
               <span className="text-xs">Aceptamos:</span>
               <span className="bg-brand-purple-700 px-2 py-0.5 rounded text-xs font-medium">Mercado Pago</span>
-              <span className="bg-brand-purple-700 px-2 py-0.5 rounded text-xs font-medium">Tarjetas</span>
               <span className="bg-brand-purple-700 px-2 py-0.5 rounded text-xs font-medium">Efectivo</span>
             </div>
           </div>
