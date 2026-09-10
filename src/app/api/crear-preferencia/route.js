@@ -2,7 +2,7 @@ import { MercadoPagoConfig, Preference } from 'mercadopago';
 
 export async function POST(request) {
   try {
-    const { items, pedidoId, payerEmail } = await request.json();
+    const { items, pedidoId, payerEmail, costoEnvio } = await request.json();
 
     const accessToken = process.env.MP_ACCESS_TOKEN;
     if (!accessToken) {
@@ -16,12 +16,20 @@ export async function POST(request) {
     const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
     const body = {
-      items: items.map(item => ({
-        title:      item.nombre,
-        quantity:   item.cantidad,
-        unit_price: Number(item.precio),
-        currency_id: 'ARS',
-      })),
+      items: [
+        ...items.map(item => ({
+          title:      item.nombre,
+          quantity:   item.cantidad,
+          unit_price: Number(item.precio),
+          currency_id: 'ARS',
+        })),
+        ...(costoEnvio > 0 ? [{
+          title:      'Envío a domicilio',
+          quantity:   1,
+          unit_price: Number(costoEnvio),
+          currency_id: 'ARS',
+        }] : []),
+      ],
       back_urls: {
         success: `${origin}/carrito?mp_status=approved&pedido=${pedidoId}`,
         failure: `${origin}/carrito?mp_status=failure&pedido=${pedidoId}`,
