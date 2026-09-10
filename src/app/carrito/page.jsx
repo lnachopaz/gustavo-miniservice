@@ -34,7 +34,7 @@ export default function CarritoPage() {
   const [verificandoPago, setVerificando]   = useState(false);
   const [form, setForm] = useState({
     nombre: '', apellido: '', telefono: '', email: '',
-    direccion: '', nota: '', notaCadete: '',
+    direccion: '', depto: '', nota: '', notaCadete: '',
   });
   const [geo, setGeo]             = useState(null); // { lat, lng, distanciaKm, direccionFormateada }
   const [geoStatus, setGeoStatus] = useState('idle'); // idle | loading | ok | fuera_rango | error
@@ -169,7 +169,9 @@ export default function CarritoPage() {
         estado,
         forma_entrega:     entrega,
         forma_pago:        metodoPago,
-        direccion_entrega: entrega === 'delivery' ? form.direccion : null,
+        direccion_entrega: entrega === 'delivery'
+          ? (form.depto.trim() ? `${form.direccion}, ${form.depto.trim()}` : form.direccion)
+          : null,
         direccion_lat:     entrega === 'delivery' ? geo?.lat ?? null : null,
         direccion_lng:     entrega === 'delivery' ? geo?.lng ?? null : null,
         distancia_km:      entrega === 'delivery' ? geo?.distanciaKm ?? null : null,
@@ -426,16 +428,30 @@ export default function CarritoPage() {
 
                   {entrega === 'delivery' && (
                     <div className="sm:col-span-2">
-                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Dirección de entrega *</label>
-                      <input
-                        name="direccion"
-                        value={form.direccion}
-                        onChange={handleFormChange}
-                        onBlur={verificarDireccion}
-                        className="input"
-                        placeholder="Calle, número, piso/dpto"
-                        required
-                      />
+                      <div className="grid sm:grid-cols-3 gap-4">
+                        <div className="sm:col-span-2">
+                          <label className="block text-xs font-semibold text-gray-600 mb-1.5">Calle y número *</label>
+                          <input
+                            name="direccion"
+                            value={form.direccion}
+                            onChange={handleFormChange}
+                            onBlur={verificarDireccion}
+                            className="input"
+                            placeholder="Ej: Corrientes 99"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-600 mb-1.5">Piso / Depto</label>
+                          <input
+                            name="depto"
+                            value={form.depto}
+                            onChange={handleFormChange}
+                            className="input"
+                            placeholder="Ej: 3° B"
+                          />
+                        </div>
+                      </div>
                       {geoStatus === 'loading' && (
                         <p className="text-xs text-gray-400 mt-1.5 flex items-center gap-1.5">
                           <span className="w-3 h-3 border-2 border-gray-300 border-t-transparent rounded-full animate-spin flex-shrink-0" />
@@ -448,7 +464,7 @@ export default function CarritoPage() {
                             <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
                             Llegamos hasta ahí ({geo.distanciaKm.toFixed(1)} km del local) — envío {formatPrecio(COSTO_ENVIO)}
                           </p>
-                          <p className="text-xs text-gray-400 mt-0.5 ml-5">¿Es correcta? {geo.direccionFormateada}</p>
+                          <p className="text-xs text-gray-400 mt-0.5 ml-5">Dirección encontrada: {geo.direccionFormateada}</p>
                         </div>
                       )}
                       {geoStatus === 'fuera_rango' && geo && (
