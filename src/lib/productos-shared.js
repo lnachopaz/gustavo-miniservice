@@ -68,7 +68,7 @@ export function normalizar(p) {
     id:             p.id,
     categoriaId:    CAT_ID[catRaw] ?? CAT_ID[CATEGORIA_POR_DEFECTO],
     categoria:      catRaw,
-    nombre:         titulo(p.descripcion),
+    nombre:         p.descripcion_web || titulo(p.descripcion),
     descripcion:    p.descripcion_web || titulo(p.descripcion),
     precio:         Number(p.precio)  || 0,
     precioAnterior: p.precio_anterior ? Number(p.precio_anterior) : null,

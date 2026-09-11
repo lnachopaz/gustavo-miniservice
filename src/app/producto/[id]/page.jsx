@@ -88,9 +88,8 @@ export default function ProductoPage() {
           <span className="badge-purple text-sm mb-3 inline-flex w-fit">{producto.categoria}</span>
           <h1 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">{producto.nombre}</h1>
           {producto.codigo && (
-            <p className="text-gray-400 text-xs mb-3">Código: {producto.codigo}</p>
+            <p className="text-gray-400 text-xs mb-6">Código: {producto.codigo}</p>
           )}
-          <p className="text-gray-600 leading-relaxed mb-6">{producto.descripcion}</p>
 
           {/* Precio */}
           <div className="bg-brand-purple-50 rounded-2xl p-4 mb-6">
