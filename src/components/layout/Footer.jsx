@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Store, MapPin, Phone, Clock } from 'lucide-react';
-import { WHATSAPP_LINK } from '@/lib/contacto';
+import { WHATSAPP_LINK, WHATSAPP_NUMERO_DISPLAY } from '@/lib/contacto';
+import { categorias } from '@/data/mockData';
 
 export default function Footer() {
   return (
@@ -28,14 +29,14 @@ export default function Footer() {
           {/* Links */}
           <div>
             <h3 className="text-brand-yellow-400 font-semibold mb-4 text-sm uppercase tracking-wider">Categorías</h3>
-            <ul className="space-y-2">
-              {['Panadería', 'Comestibles', 'Lácteos', 'Bebidas', 'Art. de Limpieza', 'Rotisería'].map(cat => (
-                <li key={cat}>
+            <ul className="grid grid-cols-2 gap-x-3 gap-y-2">
+              {categorias.map(cat => (
+                <li key={cat.id}>
                   <Link
-                    href={`/catalogo?cat=${cat.toLowerCase().replace(/ /g, '-').replace(/\./g, '')}`}
+                    href={`/catalogo?cat=${cat.slug}`}
                     className="text-brand-purple-300 hover:text-brand-yellow-400 text-sm transition-colors"
                   >
-                    {cat}
+                    {cat.label}
                   </Link>
                 </li>
               ))}
@@ -75,11 +76,15 @@ export default function Footer() {
                   Corrientes 99<br/>San Miguel de Tucumán
                 </span>
               </li>
-              <li className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-brand-yellow-400 flex-shrink-0" />
-                <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="text-brand-purple-300 hover:text-brand-yellow-400 text-sm transition-colors">
-                  WhatsApp
-                </a>
+              <li className="flex items-start gap-2">
+                <Phone className="w-4 h-4 text-brand-yellow-400 mt-0.5 flex-shrink-0" />
+                <div className="text-sm">
+                  <span className="text-brand-purple-300">{WHATSAPP_NUMERO_DISPLAY}</span>
+                  {' · '}
+                  <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="text-brand-purple-300 hover:text-brand-yellow-400 transition-colors underline">
+                    WhatsApp
+                  </a>
+                </div>
               </li>
               <li className="flex items-start gap-2">
                 <Clock className="w-4 h-4 text-brand-yellow-400 mt-0.5 flex-shrink-0" />

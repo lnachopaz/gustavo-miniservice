@@ -16,7 +16,7 @@ export const categorias = [
   { id: 7,  nombre: 'Dulces y Mieles',      label: 'Dulces y Mieles', slug: 'dulces-y-mieles',   emoji: '🍯' },
   { id: 8,  nombre: 'Lácteos',              label: 'Lácteos',         slug: 'lacteos',           emoji: '🥛' },
   { id: 9,  nombre: 'Quesos',               label: 'Quesos',          slug: 'quesos',            emoji: '🧀' },
-  { id: 10, nombre: 'Fiambres y Frescos',   label: 'Fiambres',        slug: 'fiambres-y-frescos',emoji: '🥓' },
+  { id: 10, nombre: 'Fiambres y Frescos',   label: 'Fiambres y Frescos', slug: 'fiambres-y-frescos',emoji: '🥓' },
   { id: 11, nombre: 'Hambur. y Congelados', label: 'Congelados',      slug: 'congelados',        emoji: '🧊' },
   { id: 12, nombre: 'Bebidas',              label: 'Bebidas',         slug: 'bebidas',           emoji: '🥤' },
   { id: 13, nombre: 'Limpieza del Hogar',   label: 'Limpieza',        slug: 'limpieza',          emoji: '🧹' },
