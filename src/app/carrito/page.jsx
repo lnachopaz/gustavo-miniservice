@@ -13,7 +13,7 @@ import { distanciaDesdeLocal, RADIO_MAXIMO_KM, COSTO_ENVIO } from '@/lib/envio';
 
 // Únicos dos métodos de pago: Mercado Pago (online) o efectivo (al recibir/retirar)
 const METODOS_PAGO = [
-  { id: 'mercadopago', label: 'Mercado Pago', icon: '💳', desc: 'Pagás online desde tu cuenta de MP, con tarjeta o QR. Se acredita al instante.', badge: 'Recomendado' },
+  { id: 'mercadopago', label: 'Mercado Pago', icon: '💳', desc: 'Pagás online con saldo en cuenta, débito o QR (no se acepta tarjeta de crédito ni cuotas). Se acredita al instante.', badge: 'Recomendado' },
   { id: 'efectivo',    label: 'Efectivo',     icon: '💵', desc: 'Pagás al retirar en el local o cuando te llega el pedido.',                      badge: null },
 ];
 

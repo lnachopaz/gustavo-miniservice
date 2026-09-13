@@ -6,10 +6,10 @@ const metodos = [
     icon: '💳',
     titulo: 'Mercado Pago',
     subtitulo: 'Online',
-    desc: 'Al confirmar el pedido te llevamos a la página de Mercado Pago con el monto exacto ya cargado. Pagás con tu cuenta de MP, con tarjeta o escaneando el QR, y volvés al sitio con el pedido ya confirmado.',
+    desc: 'Al confirmar el pedido te llevamos a la página de Mercado Pago con el monto exacto ya cargado. Pagás con tu cuenta de MP, débito o escaneando el QR, y volvés al sitio con el pedido ya confirmado. No aceptamos tarjeta de crédito ni pagos en cuotas.',
     detalles: [
       'Dinero en cuenta de Mercado Pago',
-      'Tarjetas de crédito y débito (con cuotas según tu banco)',
+      'Tarjeta de débito (no se acepta crédito ni cuotas)',
       'El monto va cargado, no lo tenés que escribir',
       'Acreditación inmediata: el pedido se confirma solo',
     ],
@@ -35,7 +35,7 @@ const metodos = [
 const pasosMp = [
   { n: '01', t: 'Confirmás el pedido', d: 'Elegís Mercado Pago como método de pago en el carrito.' },
   { n: '02', t: 'Te llevamos a Mercado Pago', d: 'Se abre la página de MP con el detalle y el total de tu compra.' },
-  { n: '03', t: 'Pagás', d: 'Con tu saldo de MP, tarjeta o QR, como más te guste.' },
+  { n: '03', t: 'Pagás', d: 'Con tu saldo de MP, débito o QR (no se acepta tarjeta de crédito ni cuotas).' },
   { n: '04', t: 'Volvés al sitio', d: 'Verificamos el pago con Mercado Pago y el pedido queda confirmado al instante.' },
 ];
 
@@ -106,8 +106,8 @@ export default function PagosPage() {
         <h2 className="text-2xl font-black text-gray-900 mb-5">Preguntas frecuentes</h2>
         <div className="space-y-4 mb-10">
           {[
-            { q: '¿Puedo pagar en cuotas?', a: 'Sí, con tarjeta de crédito a través de Mercado Pago podés pagar en cuotas. Las cuotas sin interés dependen de tu banco y de la promoción vigente.' },
-            { q: '¿Tengo que tener cuenta en Mercado Pago?', a: 'No es obligatorio. Podés pagar con tu cuenta de MP o directamente con tarjeta de crédito o débito desde la misma pantalla de pago.' },
+            { q: '¿Puedo pagar en cuotas?', a: 'No. Por el momento no aceptamos tarjeta de crédito, así que tampoco hay pago en cuotas. Podés pagar con saldo de Mercado Pago, débito o QR.' },
+            { q: '¿Tengo que tener cuenta en Mercado Pago?', a: 'No es obligatorio. Podés pagar con tu cuenta de MP o directamente con tarjeta de débito desde la misma pantalla de pago (no se acepta tarjeta de crédito).' },
             { q: '¿Cuándo se confirma mi pedido?', a: 'Con Mercado Pago, apenas se acredita el pago: volvés al sitio y el pedido ya figura confirmado. Si pagás en efectivo, el pedido queda pendiente y lo confirmamos desde el local.' },
             { q: '¿Qué pasa si el pago no se aprueba?', a: 'El pedido queda esperando pago y no se prepara. Podés volver al carrito e intentar de nuevo, o elegir pagar en efectivo al retirar o recibir.' },
             { q: '¿Puedo pagar con tarjeta al cadete?', a: 'No. En el domicilio y en el local sólo se recibe efectivo. Si querés pagar con tarjeta, hacelo online con Mercado Pago.' },

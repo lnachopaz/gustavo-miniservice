@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Store, MapPin, Phone, Clock } from 'lucide-react';
+import { WHATSAPP_LINK } from '@/lib/contacto';
 
 export default function Footer() {
   return (
@@ -71,13 +72,13 @@ export default function Footer() {
               <li className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-brand-yellow-400 mt-0.5 flex-shrink-0" />
                 <span className="text-brand-purple-300 text-sm">
-                  Dirección del local<br/>Ciudad, Provincia
+                  Corrientes 99<br/>San Miguel de Tucumán
                 </span>
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-brand-yellow-400 flex-shrink-0" />
-                <a href="tel:+54911XXXXXXXX" className="text-brand-purple-300 hover:text-brand-yellow-400 text-sm transition-colors">
-                  +54 9 11 XXXX-XXXX
+                <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="text-brand-purple-300 hover:text-brand-yellow-400 text-sm transition-colors">
+                  WhatsApp
                 </a>
               </li>
               <li className="flex items-start gap-2">

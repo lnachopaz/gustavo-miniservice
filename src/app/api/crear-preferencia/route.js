@@ -60,6 +60,12 @@ export async function POST(request) {
       external_reference:  String(pedidoId),
       statement_descriptor: 'GUSTAVO 1',
       metadata:            { pedido_id: String(pedidoId) },
+      // El negocio no acepta tarjeta de crédito (y por lo tanto tampoco cuotas):
+      // se excluye ese medio y se fuerza pago en un solo pago.
+      payment_methods: {
+        excluded_payment_types: [{ id: 'credit_card' }],
+        installments: 1,
+      },
     };
 
     // MP no acepta localhost como notification_url: sólo la mandamos en producción.

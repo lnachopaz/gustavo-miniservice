@@ -1,5 +1,11 @@
 import Link from 'next/link';
 import { Truck, Store, Clock, MapPin, Phone, CheckCircle2 } from 'lucide-react';
+import { RADIO_MAXIMO_KM, COSTO_ENVIO } from '@/lib/envio';
+import { WHATSAPP_LINK } from '@/lib/contacto';
+
+const costoEnvioFormateado = new Intl.NumberFormat('es-AR', {
+  style: 'currency', currency: 'ARS', minimumFractionDigits: 0,
+}).format(COSTO_ENVIO);
 
 export default function EnviosPage() {
   return (
@@ -48,7 +54,7 @@ export default function EnviosPage() {
                 <MapPin className="w-4 h-4 text-brand-purple-600 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-sm font-semibold text-brand-purple-800">Dirección</p>
-                  <p className="text-sm text-brand-purple-600">Dirección del local, Ciudad</p>
+                  <p className="text-sm text-brand-purple-600">Corrientes 99, San Miguel de Tucumán</p>
                 </div>
               </div>
             </div>
@@ -62,10 +68,10 @@ export default function EnviosPage() {
             <h2 className="text-2xl font-black text-gray-900 mb-3">Delivery a domicilio</h2>
             <div className="space-y-3 mb-6">
               {[
-                'Entrega en zonas cercanas al local',
-                'Costo según distancia (se coordina por WhatsApp)',
+                `Entrega dentro de un radio de ${RADIO_MAXIMO_KM} km del local`,
+                `Costo fijo de envío: ${costoEnvioFormateado}`,
                 'Estimado de entrega: 30-90 minutos',
-                'El cadete cobra al momento de la entrega',
+                'Si pagás en efectivo, el cadete cobra al llegar',
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-2 text-gray-600 text-sm">
                   <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
@@ -75,10 +81,26 @@ export default function EnviosPage() {
             </div>
             <div className="bg-brand-yellow-50 rounded-2xl p-4">
               <div className="flex items-start gap-2">
+                <MapPin className="w-4 h-4 text-brand-yellow-700 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-brand-yellow-800">Verificamos tu dirección al instante</p>
+                  <p className="text-sm text-brand-yellow-700">
+                    Al completar tu dirección en el carrito, el sistema la ubica automáticamente y te confirma
+                    ahí mismo si estás dentro de los {RADIO_MAXIMO_KM} km — sin esperar a que te contestemos.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2 mt-3 pt-3 border-t border-brand-yellow-200">
                 <Phone className="w-4 h-4 text-brand-yellow-700 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-sm font-semibold text-brand-yellow-800">Consultá tu zona</p>
-                  <p className="text-sm text-brand-yellow-700">Escribinos por WhatsApp antes de hacer el pedido para confirmar que llegamos a tu dirección.</p>
+                  <p className="text-sm font-semibold text-brand-yellow-800">¿Alguna duda?</p>
+                  <p className="text-sm text-brand-yellow-700">
+                    Escribinos por{' '}
+                    <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="underline font-medium">
+                      WhatsApp
+                    </a>{' '}
+                    y te ayudamos.
+                  </p>
                 </div>
               </div>
             </div>
@@ -90,7 +112,7 @@ export default function EnviosPage() {
         <div className="space-y-4">
           {[
             { q: '¿Cuánto tarda en llegar mi pedido?', a: 'El retiro en local demora entre 30 y 60 minutos. El delivery depende de la distancia, generalmente entre 30 y 90 minutos.' },
-            { q: '¿Hacen envíos fuera de la zona?', a: 'Por ahora solo hacemos delivery en zonas cercanas al local. Consultanos por WhatsApp si tenés dudas sobre tu dirección.' },
+            { q: '¿Hacen envíos fuera de la zona?', a: `No. Al escribir tu dirección en el carrito, el sistema la verifica automáticamente: si está a más de ${RADIO_MAXIMO_KM} km del local, te avisa ahí mismo que no llegamos y no podés continuar con el delivery (podés retirar en el local en su lugar). Si tenés dudas, escribinos por WhatsApp.` },
             { q: '¿Qué pasa si no estoy cuando llega el pedido?', a: 'El cadete te va a llamar antes de llegar. Si no contestás, va a esperar unos minutos. Te recomendamos estar disponible en el horario del pedido.' },
             { q: '¿Puedo cambiar la dirección después de hacer el pedido?', a: 'Sí, mientras el pedido no haya salido para entrega. Escribinos por WhatsApp lo antes posible.' },
           ].map((faq, i) => (
@@ -103,6 +125,12 @@ export default function EnviosPage() {
 
         <div className="mt-10 text-center">
           <Link href="/catalogo" className="btn-primary justify-center">Ver productos</Link>
+          <p className="mt-4 text-gray-500 text-sm">
+            ¿Dudas sobre tu dirección o tu pedido?{' '}
+            <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="text-brand-purple-700 font-semibold underline">
+              Escribinos por WhatsApp
+            </a>
+          </p>
         </div>
       </div>
     </div>

@@ -10,10 +10,11 @@ import ProductCard from '@/components/catalog/ProductCard';
 function CatalogoContent() {
   const searchParams = useSearchParams();
   const catParam = searchParams.get('cat') || '';
+  const qParam   = searchParams.get('q') || '';
 
   const [productos, setProductos]     = useState([]);
   const [cargando, setCargando]       = useState(true);
-  const [busqueda, setBusqueda]       = useState('');
+  const [busqueda, setBusqueda]       = useState(qParam);
   const [catSeleccionada, setCat]     = useState(catParam === 'ofertas' ? '' : catParam);
   const [orden, setOrden]             = useState('destacados');
   const [soloOfertas, setSoloOfertas] = useState(catParam === 'ofertas');

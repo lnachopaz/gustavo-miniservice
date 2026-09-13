@@ -3,15 +3,15 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ShoppingCart, Search, Menu, X, Store, User, LogOut, ChevronDown, Shield, CheckCircle2 } from 'lucide-react';
+import { ShoppingCart, Menu, X, Store, User, LogOut, ChevronDown, Shield, CheckCircle2 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import CartDrawer from '@/components/cart/CartDrawer';
+import BuscadorProductos from '@/components/layout/BuscadorProductos';
 import { createClient } from '@/lib/supabase/client';
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen]   = useState(false);
   const [userMenu, setUserMenu]   = useState(false);
-  const [searchQuery, setSearch]  = useState('');
   const [usuario, setUsuario]     = useState(null); // { nombre, rol }
   const { totalItems, toggleCart, cartToast } = useCart();
   const router = useRouter();
@@ -76,14 +76,7 @@ export default function Navbar() {
 
             {/* Search bar */}
             <div className="hidden md:flex flex-1 max-w-xl">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text" placeholder="Buscar productos..."
-                  value={searchQuery} onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 rounded-xl bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-brand-yellow-400 placeholder-gray-400"
-                />
-              </div>
+              <BuscadorProductos variant="desktop" />
             </div>
 
             {/* Right actions */}
@@ -191,12 +184,8 @@ export default function Navbar() {
         {menuOpen && (
           <div className="md:hidden bg-brand-purple-900 border-t border-brand-purple-700 px-4 py-4">
             {/* Buscador */}
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input type="text" placeholder="Buscar productos..."
-                className="w-full pl-10 pr-4 py-3 rounded-xl bg-white text-gray-900 text-sm focus:outline-none"
-                onKeyDown={e => { if (e.key === 'Enter') { setMenuOpen(false); window.location.href = `/catalogo?q=${e.target.value}`; } }}
-              />
+            <div className="mb-4">
+              <BuscadorProductos variant="mobile" onNavigate={() => setMenuOpen(false)} />
             </div>
 
             {/* Ofertas — link rápido */}

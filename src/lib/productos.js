@@ -36,6 +36,31 @@ export async function getProductos() {
   }
 }
 
+// Para el autocompletado del buscador: consulta directo Supabase (no el
+// catálogo ya cargado), así funciona desde cualquier página sin traer los
+// ~2300 productos primero.
+export async function buscarProductosAutocompletado(query, limite = 6) {
+  try {
+    const q = (query || '').trim().replace(/[^\wÁÉÍÓÚÜÑáéíóúüñ\s.-]/g, ' ').trim();
+    if (!q) return [];
+
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('productos')
+      .select(COLUMNAS.join(','))
+      .eq('publicado', true)
+      .gt('precio', 0)
+      .or(`descripcion_web.ilike.%${q}%,descripcion.ilike.%${q}%,codigo.ilike.%${q}%`)
+      .limit(limite);
+
+    if (error) throw error;
+    return (data || []).map(normalizar);
+  } catch (err) {
+    console.error('buscarProductosAutocompletado error:', err);
+    return [];
+  }
+}
+
 export function formatPrecio(precio) {
   return new Intl.NumberFormat('es-AR', {
     style: 'currency', currency: 'ARS',

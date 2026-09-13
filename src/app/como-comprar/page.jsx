@@ -1,5 +1,11 @@
 import Link from 'next/link';
 import { ShoppingCart, CreditCard, Package, Bike, Store, CheckCircle2, ArrowRight } from 'lucide-react';
+import { RADIO_MAXIMO_KM, COSTO_ENVIO } from '@/lib/envio';
+import { WHATSAPP_LINK } from '@/lib/contacto';
+
+const costoEnvioFormateado = new Intl.NumberFormat('es-AR', {
+  style: 'currency', currency: 'ARS', minimumFractionDigits: 0,
+}).format(COSTO_ENVIO);
 
 const pasos = [
   {
@@ -20,14 +26,14 @@ const pasos = [
     numero: '03',
     icon: Package,
     titulo: 'Completá tus datos',
-    desc: 'Ingresá tu nombre, teléfono y dirección de entrega (si pedís delivery). Si ya tenés cuenta, se pre-completan solos.',
+    desc: `Ingresá tu nombre, teléfono y dirección de entrega (si pedís delivery) — la verificamos al instante y te mostramos si estás dentro de los ${RADIO_MAXIMO_KM} km. Si ya tenés cuenta, se pre-completan solos.`,
     color: 'bg-green-100 text-green-700',
   },
   {
     numero: '04',
     icon: CreditCard,
     titulo: 'Elegí cómo pagar',
-    desc: 'Mercado Pago (pagás online y el pedido se confirma solo) o efectivo al retirar o recibir.',
+    desc: 'Mercado Pago (saldo en cuenta, débito o QR — no aceptamos tarjeta de crédito ni cuotas) o efectivo al retirar o recibir.',
     color: 'bg-yellow-100 text-yellow-700',
   },
   {
@@ -90,9 +96,13 @@ export default function ComoComprarPage() {
             <Bike className="w-8 h-8 mb-3" />
             <h3 className="font-black text-lg mb-2">Delivery a domicilio</h3>
             <p className="text-brand-purple-800 text-sm leading-relaxed">
-              Hacemos entregas en zonas cercanas al local. El costo de envío se coordina por WhatsApp según la distancia.
+              Hacemos entregas dentro de un radio de {RADIO_MAXIMO_KM} km del local. Al escribir tu dirección en el
+              carrito la verificamos al instante y el envío tiene un costo fijo de {costoEnvioFormateado}.
             </p>
-            <p className="mt-3 text-brand-purple-700 text-sm font-semibold">Consultá disponibilidad en tu zona</p>
+            <p className="mt-3 text-brand-purple-700 text-sm font-semibold">
+              ¿Tu dirección no entra en el radio?{' '}
+              <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="underline">Consultanos por WhatsApp</a>
+            </p>
           </div>
         </div>
 
@@ -103,7 +113,11 @@ export default function ComoComprarPage() {
             <ArrowRight className="w-5 h-5" />
           </Link>
           <p className="mt-4 text-gray-500 text-sm">
-            ¿Tenés dudas? Escribinos por WhatsApp y te ayudamos.
+            ¿Tenés dudas?{' '}
+            <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer" className="text-brand-purple-700 font-semibold underline">
+              Escribinos por WhatsApp
+            </a>{' '}
+            y te ayudamos.
           </p>
         </div>
       </div>
